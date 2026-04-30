@@ -1,26 +1,431 @@
+/* ═══════════════════════════════════════════════════════
+   NEXUS v2.0 — Void Intelligence Design System
+   Tailwind CSS v4 — @theme token system
+   Single source of truth for all visual decisions
+   ═══════════════════════════════════════════════════════ */
+
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* ─── Core Surfaces ──────────────────────────────────── */
+  --color-void: #080808;
+  --color-surface: #111111;
+  --color-surface-raised: #161616;
+  --color-border: #1e1e1e;
+  --color-border-subtle: #161616;
+
+  /* ─── Text ───────────────────────────────────────────── */
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #888888;
+  --color-text-disabled: #3a3a3a;
+
+  /* ─── Signal — The ONE accent color ─────────────────── */
+  /* Rule: appears maximum 8 times across the entire UI    */
+  /* Used ONLY for: AI pulse dot, active streak number,    */
+  /* active nav indicator, Protocol ZERO trigger           */
+  --color-signal: #e8ff47;
+  --color-signal-dim: rgba(232, 255, 71, 0.12);
+  --color-signal-ghost: rgba(232, 255, 71, 0.04);
+
+  /* ─── Mode Colors — transitions only, never backgrounds  */
+  --color-apex: #22d3ee;
+  --color-apex-dim: rgba(34, 211, 238, 0.08);
+  --color-haven: #c4a882;
+  --color-haven-dim: rgba(196, 168, 130, 0.08);
+
+  /* ─── Functional ─────────────────────────────────────── */
+  --color-error: #ff4444;
+  --color-success: #4ade80;
+  --color-warning: #f59e0b;
+
+  /* ─── Typography ─────────────────────────────────────── */
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+  --font-sans: 'Satoshi', system-ui, sans-serif;
+
+  /* ─── Spacing ────────────────────────────────────────── */
+  --spacing-rail: 56px;
+  --spacing-panel: 320px;
+
+  /* ─── Radius ──────────────────────────────────────────── */
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-badge: 4px;
+
+  /* ─── Z-index scale ───────────────────────────────────── */
+  --z-base: 0;
+  --z-card: 10;
+  --z-nav: 50;
+  --z-island: 60;
+  --z-modal: 70;
+  --z-transition: 80;
+  --z-protocol: 90;
+
+  /* ─── Easing ──────────────────────────────────────────── */
+  --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ═══════════════════════════════════════════════════════
+   GLOBAL RESET & BASE
+   ═══════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--color-void);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-void);
+  color: var(--color-text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
+
+/* Remove default focus ring — we define our own */
+*:focus {
+  outline: none;
+}
+
+/* Surgical focus ring — keyboard navigation only */
+*:focus-visible {
+  outline: 1px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY CLASSES
+   These are NOT Tailwind utilities — they are semantic 
+   classes with fixed roles. Use exactly as named.
+   ═══════════════════════════════════════════════════════ */
+
+/* H1 — One per route. Commands the page. */
+.text-display {
+  font-family: var(--font-serif);
+  font-size: clamp(48px, 7vw, 88px);
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  font-optical-sizing: auto;
+  line-height: 1.05;
+  color: var(--color-text-primary);
+}
+
+/* H2 — Section titles */
+.text-heading {
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 3.5vw, 48px);
+  letter-spacing: -0.03em;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+}
+
+/* All numbers, stats, timestamps, data */
+.text-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'ss01';
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+/* All prose, journal text, body copy */
+.text-body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: var(--color-text-primary);
+}
+
+/* Timestamps, labels, captions */
+.text-caption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* AI responses — Oracle/Commander/Poet only. NEVER reused. */
+.text-oracle {
+  font-family: var(--font-serif);
+  font-size: clamp(17px, 2vw, 21px);
+  letter-spacing: -0.01em;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SURFACE SYSTEM
+   ═══════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 0 transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Grain texture — removes flat digital feeling */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* All card children above grain */
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover — barely visible signal blush */
+.card:hover {
+  border-color: #262626;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 60px var(--color-signal-ghost);
+  transition: all 400ms var(--ease-expo-out);
+}
+
+/* Active — AI is reading this surface */
+.card--signal {
+  border-color: rgba(232, 255, 71, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 40px rgba(232, 255, 71, 0.06);
+}
+
+/* Raised surface — modals, dropdowns, tooltips */
+.surface-raised {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATION KEYFRAMES
+   Only animations listed in PRD Section 2.5 exist here.
+   Do not add new keyframes.
+   ═══════════════════════════════════════════════════════ */
+
+/* Signal dot pulse — AI processing indicator ONLY */
+@keyframes signal-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.4;
+  }
+}
+
+/* AI text materialize — word by word */
+@keyframes word-materialize {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+/* Number odometer — exit */
+@keyframes odometer-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* Number odometer — enter */
+@keyframes odometer-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Page entrance — weight settling */
+@keyframes page-enter {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Heatmap cell reveal */
+@keyframes cell-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Page entrance — apply to route wrappers */
+  .animate-page-enter {
+    animation: page-enter 220ms var(--ease-expo-out) both;
+  }
+
+  /* Signal dot pulse — active state only */
+  .animate-signal-pulse {
+    animation: signal-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* Word materialize — applied per word by JS */
+  .animate-word-materialize {
+    animation: word-materialize 120ms var(--ease-expo-out) both;
+  }
+
+  /* Layout zones */
+  .layout-rail {
+    width: var(--spacing-rail);
+    flex-shrink: 0;
+  }
+  .layout-panel {
+    width: var(--spacing-panel);
+    flex-shrink: 0;
+  }
+  .layout-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Void background */
+  .bg-void {
+    background-color: var(--color-void);
+  }
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+  .bg-raised {
+    background-color: var(--color-surface-raised);
+  }
+
+  /* Border utilities */
+  .border-void {
+    border-color: var(--color-border);
+  }
+  .border-subtle {
+    border-color: var(--color-border-subtle);
+  }
+
+  /* Text color utilities */
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+  .text-disabled {
+    color: var(--color-text-disabled);
+  }
+  .text-signal {
+    color: var(--color-signal);
+  }
+
+  /* Mode color utilities */
+  .text-apex {
+    color: var(--color-apex);
+  }
+  .text-haven {
+    color: var(--color-haven);
+  }
+
+  /* Divider — surgical, barely visible */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  /* Scrollbar — invisible until hover */
+  .scroll-void {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  .scroll-void::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scroll-void::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-void::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 2px;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: var(--color-signal-dim);
+    color: var(--color-text-primary);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   WHAT IS DELIBERATELY ABSENT
+   
+   - No glassmorphism (backdrop-blur, bg-opacity tricks)
+   - No gradient backgrounds
+   - No border-radius > 12px anywhere
+   - No box-shadow larger than listed above
+   - No color not in the theme block
+   - No animation not listed in Section 2.5 of the PRD
+   - No font not in --font-serif / --font-mono / --font-sans
+   ═══════════════════════════════════════════════════════ */
