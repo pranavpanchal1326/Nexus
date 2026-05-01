@@ -236,7 +236,7 @@ export function useTimeMode(preferred: PreferredMode = 'auto'): TimeModeState {
 
   // ─── Mount: hydrate immediately, then tick every 60s ─────────────────────────
 
-  useEffect(() => {
+  useEffect((): (() => void) => {
     // On first mount — check localStorage for last known mode
     // Use it as optimistic initial value to prevent flash
     const persisted = getPersistedMode()
@@ -260,7 +260,7 @@ export function useTimeMode(preferred: PreferredMode = 'auto'): TimeModeState {
     const now         = new Date()
     const msUntilNext = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
 
-    const alignmentTimer = setTimeout(() => {
+    const alignmentTimer = setTimeout((): void => {
       tick()
       intervalRef.current = setInterval(tick, TICK_INTERVAL)
     }, msUntilNext)
@@ -274,8 +274,7 @@ export function useTimeMode(preferred: PreferredMode = 'auto'): TimeModeState {
 
   // ─── React to preferred mode changes (user changes settings mid-session) ─────
 
-  useEffect(() => {
-    if (!state.isHydrated) return
+  useEffect((): void => {
     const { resolved } = resolveMode(state.circadianMode, preferred)
     if (resolved !== state.mode) {
       setMode(resolved)

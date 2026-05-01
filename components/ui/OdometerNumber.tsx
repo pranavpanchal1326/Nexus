@@ -12,8 +12,8 @@ export interface OdometerNumberProps {
   fontSize?: number
   /** Color — defaults to text-primary */
   color?: string
-  /** Optional className */
   className?: string
+  style?: React.CSSProperties
 }
 
 /**
@@ -33,6 +33,7 @@ export function OdometerNumber({
   fontSize,
   color,
   className,
+  style,
 }: OdometerNumberProps): React.JSX.Element {
   const mode = useMode()
   const duration = mode === 'apex' ? 150 : 240
@@ -42,14 +43,14 @@ export function OdometerNumber({
   const [incomingValue, setIncomingValue] = useState(value)
   const prevValue = useRef(value)
 
-  useEffect(() => {
+  useEffect((): (() => void) | void => {
     if (value === prevValue.current) return
 
     // Start roll animation
     setIncomingValue(value)
     setIsRolling(true)
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout((): void => {
       setDisplayValue(value)
       setIsRolling(false)
       prevValue.current = value
@@ -78,6 +79,7 @@ export function OdometerNumber({
         alignItems: 'center',
         gap: '4px',
         verticalAlign: 'middle',
+        ...style,
       }}
     >
       {/* Outgoing number — rolls up and out */}

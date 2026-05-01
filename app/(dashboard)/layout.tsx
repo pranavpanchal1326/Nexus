@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+}): Promise<React.JSX.Element> {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
 

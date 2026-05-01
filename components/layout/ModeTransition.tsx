@@ -35,7 +35,7 @@ interface ModeTransitionProps {
   onComplete?: (newMode: Mode) => void
 }
 
-export function ModeTransition({ onComplete }: ModeTransitionProps) {
+export function ModeTransition({ onComplete }: ModeTransitionProps): React.JSX.Element {
   const { mode, setMode } = useNexusStore()
   const [isPlaying, setIsPlaying] = useState(false)
   const [phase, setPhase] = useState<TransitionPhase>('idle')
@@ -44,7 +44,7 @@ export function ModeTransition({ onComplete }: ModeTransitionProps) {
   const sequenceRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
   // Exposed trigger — called by DynamicIsland click
-  const trigger = useCallback(() => {
+  const trigger = useCallback((): void => {
     if (isPlaying) return  // non-interruptible
 
     const next: Mode = mode === 'apex' ? 'haven' : 'apex'
@@ -55,10 +55,10 @@ export function ModeTransition({ onComplete }: ModeTransitionProps) {
     playModeTransition(next)
 
     // The 600ms sequence
-    const t1 = setTimeout(() => setPhase('identity'), 80)
-    const t2 = setTimeout(() => setPhase('holding'), 200)
-    const t3 = setTimeout(() => setPhase('exiting'), 500)
-    const t4 = setTimeout(() => {
+    const t1 = setTimeout((): void => setPhase('identity'), 80)
+    const t2 = setTimeout((): void => setPhase('holding'), 200)
+    const t3 = setTimeout((): void => setPhase('exiting'), 500)
+    const t4 = setTimeout((): void => {
       setMode(next)              // Zustand updated AFTER visual completes
       setIsPlaying(false)
       setPhase('idle')
@@ -69,13 +69,13 @@ export function ModeTransition({ onComplete }: ModeTransitionProps) {
   }, [isPlaying, mode, setMode, onComplete])
 
   // Cleanup on unmount
-  useEffect(() => {
+  useEffect((): (() => void) => {
     return () => sequenceRef.current.forEach(clearTimeout)
   }, [])
 
   // Expose trigger via custom event — DynamicIsland dispatches this
-  useEffect(() => {
-    const handler = () => trigger()
+  useEffect((): (() => void) => {
+    const handler = (): void => trigger()
     window.addEventListener('nexus:mode-transition', handler)
     return () => window.removeEventListener('nexus:mode-transition', handler)
   }, [trigger])
@@ -165,7 +165,7 @@ function ModeParticle({
   particle: Particle
   targetMode: Mode
   modeColor: string
-}) {
+}): React.JSX.Element {
   const isApex = targetMode === 'apex'
 
   return (

@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SignalDot } from '@/components/ui/SignalDot'
 
-export default function LoginPage() {
+export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setLoading(true)
     setError(null)
@@ -31,7 +31,7 @@ export default function LoginPage() {
     router.refresh()
   }
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = async (): Promise<void> => {
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -41,7 +41,7 @@ export default function LoginPage() {
     })
   }
 
-  const handleGithubAuth = async () => {
+  const handleGithubAuth = async (): Promise<void> => {
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'github',

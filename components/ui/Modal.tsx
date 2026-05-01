@@ -22,7 +22,7 @@ export function Modal({
   maxWidth = 560,
 }: ModalProps): React.JSX.Element {
   // Close on Escape key
-  useEffect(() => {
+  useEffect((): (() => void) | void => {
     if (!open) return
 
     const handleKey = (e: KeyboardEvent): void => {
@@ -30,17 +30,17 @@ export function Modal({
     }
 
     window.addEventListener('keydown', handleKey)
-    return (): void => window.removeEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
   }, [open, onClose])
 
   // Prevent body scroll when open
-  useEffect(() => {
+  useEffect((): (() => void) | void => {
     if (open) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
     }
-    return (): void => {
+    return () => {
       document.body.style.overflow = ''
     }
   }, [open])
@@ -62,7 +62,7 @@ export function Modal({
               inset: 0,
               background: 'rgba(8,8,8,0.8)',
               backdropFilter: 'blur(4px)',
-              zIndex: 'var(--z-modal)' as unknown as number,
+              zIndex: 70,
             }}
             aria-hidden="true"
           />
@@ -76,7 +76,7 @@ export function Modal({
               alignItems: 'center',
               justifyContent: 'center',
               padding: '24px',
-              zIndex: 'var(--z-modal)' as unknown as number,
+              zIndex: 70,
               pointerEvents: 'none',
             }}
           >

@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  motion,
-  type HTMLMotionProps,
-  type MotionStyle,
-  type VariantLabels,
-  type TargetAndTransition,
-} from 'framer-motion'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 import { forwardRef } from 'react'
 import { DURATION } from '@/lib/motion'
 
@@ -87,32 +81,30 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           padding: PADDING_MAP[padding],
           position: 'relative',
           overflow: 'hidden',
-          ...(style as MotionStyle),
-        } as MotionStyle}
-        whileHover={
-          (isStatic
-            ? {}
-            : {
-                borderColor:
-                  variant === 'signal'
-                    ? 'rgba(232,255,71,0.3)'
-                    : '#262626',
-                boxShadow:
-                  variant === 'signal'
-                    ? `
-                        inset 0 1px 0 rgba(255,255,255,0.04),
-                        0 0 60px rgba(232,255,71,0.08)
-                      `
-                    : `
-                        inset 0 1px 0 rgba(255,255,255,0.04),
-                        0 0 60px rgba(232,255,71,0.04)
-                      `,
-                transition: {
-                  duration: DURATION.CARD_HOVER,
-                  ease: [0.16, 1, 0.3, 1],
-                },
-              }) as VariantLabels | TargetAndTransition
-        }
+          ...style,
+        } as import('framer-motion').MotionStyle}
+        {...(!isStatic && {
+          whileHover: {
+            borderColor:
+              variant === 'signal'
+                ? 'rgba(232,255,71,0.3)'
+                : '#262626',
+            boxShadow:
+              variant === 'signal'
+                ? `
+                    inset 0 1px 0 rgba(255,255,255,0.04),
+                    0 0 60px rgba(232,255,71,0.08)
+                  `
+                : `
+                    inset 0 1px 0 rgba(255,255,255,0.04),
+                    0 0 60px rgba(232,255,71,0.04)
+                  `,
+            transition: {
+              duration: DURATION.CARD_HOVER,
+              ease: [0.16, 1, 0.3, 1],
+            },
+          },
+        })}
         {...props}
       >
         {/* Grain texture overlay */}

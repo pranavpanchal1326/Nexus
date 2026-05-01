@@ -41,6 +41,7 @@ function getContext(): AudioContext | null {
 
   return ctx
 }
+
 // ─── Core Synthesis Primitives ────────────────────────
 
 /**
@@ -130,6 +131,7 @@ function applyEnvelope(
  * HAVEN: soft, rounded tap
  */
 export function playClick(mode: Mode = 'apex'): void {
+  if (typeof window === 'undefined') return
   const audioCtx = getContext()
   if (!audioCtx || !masterGain) return
 

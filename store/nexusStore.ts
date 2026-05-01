@@ -50,7 +50,7 @@ interface NexusState {
 // ─── Store ────────────────────────────────────────────
 export const useNexusStore = create<NexusState>()(
   devtools(
-    set => ({
+    (set): NexusState => ({
       // ─── Defaults ──────────────────────────────
       mode:                 'apex',
       modePreference:       'auto',
@@ -64,9 +64,9 @@ export const useNexusStore = create<NexusState>()(
       physics: { stiffness: 500, damping: 40, mass: 0.8 },
 
       // ─── Actions ───────────────────────────────
-      setMode: mode =>
+      setMode: (mode: Mode): void =>
         set(
-          state => ({
+          (): Partial<NexusState> => ({
             mode,
             physics: mode === 'apex'
               ? { stiffness: 500, damping: 40, mass: 0.8 }
@@ -76,36 +76,36 @@ export const useNexusStore = create<NexusState>()(
           'setMode'
         ),
 
-      setModePreference: modePreference =>
+      setModePreference: (modePreference: ModePreference): void =>
         set({ modePreference }, false, 'setModePreference'),
 
-      setIsTransitioning: isTransitioning =>
+      setIsTransitioning: (isTransitioning: boolean): void =>
         set({ isTransitioning }, false, 'setIsTransitioning'),
 
-      setIsAiProcessing: isAiProcessing =>
+      setIsAiProcessing: (isAiProcessing: boolean): void =>
         set({ isAiProcessing }, false, 'setIsAiProcessing'),
 
-      setIsProtocolZeroActive: isProtocolZeroActive =>
+      setIsProtocolZeroActive: (isProtocolZeroActive: boolean): void =>
         set({ isProtocolZeroActive }, false, 'setIsProtocolZeroActive'),
 
-      setIsIntelPanelOpen: isIntelPanelOpen =>
+      setIsIntelPanelOpen: (isIntelPanelOpen: boolean): void =>
         set(
           { isIntelPanelOpen, intelPanelOpen: isIntelPanelOpen },
           false,
           'setIsIntelPanelOpen'
         ),
 
-      setIsMuted: isMuted =>
+      setIsMuted: (isMuted: boolean): void =>
         set({ isMuted }, false, 'setIsMuted'),
 
-      setVolume: volume =>
+      setVolume: (volume: number): void =>
         set(
           { volume: Math.max(0, Math.min(1, volume)) },
           false,
           'setVolume'
         ),
 
-      toggleMode: () =>
+      toggleMode: (): void =>
         set(
           state => {
             const nextMode = state.mode === 'apex' ? 'haven' : 'apex'
@@ -120,14 +120,14 @@ export const useNexusStore = create<NexusState>()(
           'toggleMode'
         ),
 
-      toggleMute: () =>
+      toggleMute: (): void =>
         set(
           state => ({ isMuted: !state.isMuted }),
           false,
           'toggleMute'
         ),
 
-      toggleIntelPanel: () =>
+      toggleIntelPanel: (): void =>
         set(
           state => ({
             isIntelPanelOpen: !state.isIntelPanelOpen,
@@ -137,7 +137,7 @@ export const useNexusStore = create<NexusState>()(
           'toggleIntelPanel'
         ),
     }),
-    { name: 'nexus-store' }
+    { name: 'nexus-store', enabled: process.env.NODE_ENV === 'development' }
   )
 )
 

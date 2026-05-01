@@ -14,7 +14,7 @@ const FPS_RECOVERY_THRESHOLD = 55 // Above 55fps → attempt quality increase
 export function ScenePerformanceMonitor({
   onQualityChange,
   enabled,
-}: ScenePerformanceMonitorProps) {
+}: ScenePerformanceMonitorProps): null {
   const frameTimesRef   = useRef<number[]>([])
   const lastTimeRef     = useRef<number>(performance.now())
   const currentQuality  = useRef<'high' | 'medium' | 'low'>('high')

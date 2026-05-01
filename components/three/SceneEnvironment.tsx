@@ -12,14 +12,14 @@ const FOG_DENSITY = {
 // Background color — always void black
 const SCENE_BACKGROUND = new Color('#080808')
 
-export function SceneEnvironment() {
+export function SceneEnvironment(): React.JSX.Element {
   const { scene } = useThree()
   const mode       = useNexusStore(state => state.mode)
   const fogRef     = useRef<FogExp2 | null>(null)
   const targetDensityRef = useRef<number>(FOG_DENSITY.apex)
 
   // Initialize scene
-  useEffect(() => {
+  useEffect((): (() => void) => {
     scene.background = SCENE_BACKGROUND
 
     const fog = new FogExp2('#080808', FOG_DENSITY.apex)
@@ -33,12 +33,12 @@ export function SceneEnvironment() {
   }, [scene])
 
   // React to mode changes — update target density
-  useEffect(() => {
+  useEffect((): void => {
     targetDensityRef.current = FOG_DENSITY[mode]
   }, [mode])
 
   // Lerp fog density toward target on each frame — smooth mode transition
-  useFrame(() => {
+  useFrame((): void => {
     if (!fogRef.current) return
     const current = fogRef.current.density
     const target  = targetDensityRef.current

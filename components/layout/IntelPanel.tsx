@@ -11,7 +11,7 @@ interface IntelPanelProps {
   preferredMode: PreferredMode
 }
 
-export function IntelPanel({ userId: _userId, preferredMode }: IntelPanelProps) {
+export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Element {
   const isIntelPanelOpen = useNexusStore(state => state.isIntelPanelOpen)
   const { mode, windowLabel, isHydrated } = useTimeMode(preferredMode)
   const { data: stats, isLoading } = useStats()
@@ -223,7 +223,7 @@ export function IntelPanel({ userId: _userId, preferredMode }: IntelPanelProps) 
   )
 }
 
-function ActivitySkeleton() {
+function ActivitySkeleton(): React.JSX.Element {
   return (
     <div className="flex flex-col">
       {[1, 2, 3].map((i) => (

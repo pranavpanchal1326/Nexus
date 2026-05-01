@@ -68,15 +68,6 @@
 
 }
 
-/* ─── Satoshi variable font axes ─────────────────────── */
-@font-face {
-  font-family: 'Satoshi';
-  src: url('/fonts/Satoshi-Variable.woff2') format('woff2');
-  font-weight: 300 900;
-  font-display: swap;
-  font-style: normal;
-}
-
 /* ═══════════════════════════════════════════════════════
    GLOBAL RESET & BASE
    ═══════════════════════════════════════════════════════ */

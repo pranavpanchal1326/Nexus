@@ -12,7 +12,7 @@ interface SceneCanvasProps {
   showStats: boolean
 }
 
-export function SceneCanvas({ children, showStats }: SceneCanvasProps) {
+export function SceneCanvas({ children, showStats }: SceneCanvasProps): React.JSX.Element {
   const [quality, setQuality] = useState<'high' | 'medium' | 'low'>('high')
 
   const handleCreated = useCallback((state: RootState) => {

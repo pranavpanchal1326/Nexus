@@ -20,7 +20,8 @@ export interface StatsData {
   }[]
 }
 
-export function useStats() {
+import { UseQueryResult } from '@tanstack/react-query';
+export function useStats(): UseQueryResult<StatsData, Error> {
   return useQuery<StatsData>({
     queryKey: ['stats'],
     queryFn: async () => {

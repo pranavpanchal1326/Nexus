@@ -35,7 +35,7 @@ export class SceneErrorBoundary extends Component<
     // reportSceneError(error, info)
   }
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       // Silent geometric fallback — never show a red error box
       return (

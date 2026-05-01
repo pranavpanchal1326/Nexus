@@ -83,7 +83,7 @@ export const HavenSpring = forwardRef<HTMLDivElement, HavenSpringProps>(
         className={className}
         {...presetProps}
         {...props}
-        transition={props.transition ?? (presetProps as any).transition ?? SPRING.FLOAT}
+        transition={props.transition ?? (presetProps as HTMLMotionProps<'div'>).transition ?? SPRING.FLOAT}
       >
         {children}
       </MotionTag>
@@ -104,7 +104,7 @@ export function HavenButton({
   onClick,
   disabled,
   ...props
-}: HTMLMotionProps<'button'> & { disabled?: boolean }) {
+}: HTMLMotionProps<'button'> & { disabled?: boolean }): React.JSX.Element {
   const interactionProps = disabled ? {} : {
     whileTap: { scale: 0.97 },
     whileHover: { scale: 1.015 }
@@ -136,7 +136,7 @@ export function HavenCard({
   className,
   onClick,
   ...props
-}: HTMLMotionProps<'div'>) {
+}: HTMLMotionProps<'div'>): React.JSX.Element {
   const hoverProps = {
     whileHover: {
       scale:       1.008,

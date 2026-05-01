@@ -32,12 +32,12 @@ interface NavRailProps {
   profile: Profile | null
 }
 
-export function NavRail({ user, profile }: NavRailProps) {
+export function NavRail({ user, profile }: NavRailProps): React.JSX.Element {
   const pathname = usePathname()
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const physics = useNexusStore(state => state.physics)
 
-  const isActive = (href: string) => {
+  const isActive = (href: string): boolean => {
     if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
   }
@@ -131,7 +131,7 @@ export function NavRail({ user, profile }: NavRailProps) {
   )
 }
 
-function NavTooltip({ label, visible }: { label: string; visible: boolean }) {
+function NavTooltip({ label, visible }: { label: string; visible: boolean }): React.JSX.Element {
   return (
     <AnimatePresence>
       {visible && (

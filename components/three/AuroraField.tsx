@@ -21,7 +21,7 @@ import { useNexusStore } from '@/store/nexusStore'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuroraUniforms {
-  [key: string]: { value: any }
+  [key: string]: { value: unknown }
   uTime:        { value: number  }
   uSpeed:       { value: number  }
   uTurbulence:  { value: number  }
@@ -219,13 +219,13 @@ export function AuroraField({
   planeScale = 8,
   modeOverride,
   quality    = 'high',
-}: AuroraFieldProps) {
+}: AuroraFieldProps): React.JSX.Element {
   const mode         = useNexusStore(state => state.mode)
   const resolvedMode = modeOverride ?? mode
   const { size }     = useThree()
 
   // Quality to float map
-  const qualityValue = useMemo(() => {
+  const qualityValue = useMemo((): number => {
     if (quality === 'low') return 0.0
     if (quality === 'medium') return 0.5
     return 1.0
@@ -239,7 +239,7 @@ export function AuroraField({
   const targetColorBRef = useRef(new Color(AURORA_MODES[resolvedMode].colorB))
 
   // Build uniforms once — mutated in useFrame
-  const uniforms = useMemo<AuroraUniforms>(() => {
+  const uniforms = useMemo<AuroraUniforms>((): AuroraUniforms => {
     const cfg = AURORA_MODES[resolvedMode]
     return {
       uTime:       { value: 0 },
@@ -256,7 +256,7 @@ export function AuroraField({
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build material once
-  const material = useMemo(() => new ShaderMaterial({
+  const material = useMemo((): ShaderMaterial => new ShaderMaterial({
     vertexShader:   VERTEX_SHADER,
     fragmentShader: FRAGMENT_SHADER,
     uniforms,
@@ -268,20 +268,20 @@ export function AuroraField({
   }), [uniforms])
 
   // Geometry
-  const geometry = useMemo(() => new PlaneGeometry(planeScale, planeScale), [planeScale])
+  const geometry = useMemo((): PlaneGeometry => new PlaneGeometry(planeScale, planeScale), [planeScale])
 
   // Stable mesh ref
   const meshRef = useRef<Mesh>(new Mesh(geometry, material))
 
   // Dispose on unmount
-  useEffect(() => {
+  useEffect((): (() => void) => {
     const mat = material
     const geo = geometry
-    return () => { mat.dispose(); geo.dispose() }
+    return (): void => { mat.dispose(); geo.dispose() }
   }, [material, geometry])
 
   // React to mode changes
-  useEffect(() => {
+  useEffect((): void => {
     const cfg = AURORA_MODES[resolvedMode]
     targetConfig.current = cfg
     targetColorARef.current.set(cfg.colorA)
@@ -289,16 +289,16 @@ export function AuroraField({
   }, [resolvedMode])
 
   // React to quality changes
-  useEffect(() => {
+  useEffect((): void => {
     uniforms.uQuality.value = qualityValue
   }, [qualityValue, uniforms])
 
   // Viewport resize
-  useEffect(() => {
+  useEffect((): void => {
     uniforms.uResolution.value = [size.width, size.height]
   }, [size.width, size.height, uniforms])
 
-  useFrame((_, delta) => {
+  useFrame((_, delta): void => {
     const dt = Math.min(delta, 0.05)
     const cfg = targetConfig.current
     const u   = uniforms

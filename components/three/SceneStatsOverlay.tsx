@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 
-export function SceneStatsOverlay() {
+export function SceneStatsOverlay(): React.JSX.Element {
   const fpsRef       = useRef<number>(60)
   const frameCount   = useRef<number>(0)
   const lastTimeRef  = useRef<number>(performance.now())

@@ -1,8 +1,13 @@
-import { SceneWrapper } from '@/components/three/SceneWrapper'
+import dynamic from 'next/dynamic'
+const SceneWrapper = dynamic(
+  () => import('@/components/three/SceneWrapper').then(m => m.SceneWrapper),
+  { ssr: false }
+)
+
 import { Tesseract }    from '@/components/three/Tesseract'
 import { AuroraField }  from '@/components/three/AuroraField'
 
-export default function DashboardPage() {
+export default function DashboardPage(): React.JSX.Element {
   return (
     <div className="dashboard-page">
 

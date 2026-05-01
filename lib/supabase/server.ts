@@ -3,7 +3,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database'
 
-export const createServerSupabaseClient = async () => {
+import type { SupabaseClient } from '@supabase/supabase-js'
+export const createServerSupabaseClient = async (): Promise<SupabaseClient<Database>> => {
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
@@ -26,7 +27,7 @@ export const createServerSupabaseClient = async () => {
   )
 }
 
-export const createServiceRoleClient = () =>
+export const createServiceRoleClient = (): SupabaseClient<Database> =>
   createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

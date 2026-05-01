@@ -17,7 +17,15 @@ import { useNexusStore } from '@/store/nexusStore'
  * The signal color budget is 8 uses total in the UI.
  * This dot is one of them.
  */
-export function SignalDot({ className }: { className?: string }): React.JSX.Element {
+export interface SignalDotProps {
+  className?: string
+  style?: React.CSSProperties
+}
+
+export function SignalDot({
+  className,
+  style,
+}: SignalDotProps): React.JSX.Element {
   const isAiProcessing = useNexusStore(s => s.isAiProcessing)
 
   return (
@@ -38,6 +46,7 @@ export function SignalDot({ className }: { className?: string }): React.JSX.Elem
         // Static when idle — no idle animation
         opacity: isAiProcessing ? 1 : 0.4,
         transition: 'opacity 400ms',
+        ...style,
       }}
     />
   )

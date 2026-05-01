@@ -27,7 +27,7 @@ const PROTOCOL_ZERO_PHRASES: Record<Mode, string[]> = {
   ],
 }
 
-export function ProtocolZero() {
+export function ProtocolZero(): React.JSX.Element {
   const { mode } = useNexusStore()
   const [phase, setPhase] = useState<ProtocolPhase>('idle')
   const [showLine1, setShowLine1] = useState(false)
@@ -82,15 +82,15 @@ export function ProtocolZero() {
     // Play synthesis sound
     playProtocolZero()
 
-    const t1 = setTimeout(() => {
+    const t1 = setTimeout((): void => {
       setPhase('voice')
       speakPhrase(phrase, mode)
     }, 200)
 
-    const t2 = setTimeout(() => setShowLine1(true), 3500)
-    const t3 = setTimeout(() => setShowLine2(true), 4000)
-    const t4 = setTimeout(() => setPhase('returning'), 4800)
-    const t5 = setTimeout(() => {
+    const t2 = setTimeout((): void => setShowLine1(true), 3500)
+    const t3 = setTimeout((): void => setShowLine2(true), 4000)
+    const t4 = setTimeout((): void => setPhase('returning'), 4800)
+    const t5 = setTimeout((): void => {
       setPhase('idle')
       setShowLine1(false)
       setShowLine2(false)
@@ -100,13 +100,13 @@ export function ProtocolZero() {
   }, [phase, mode, getRandomPhrase, speakPhrase])
 
   // Keyboard — hold Escape 2s
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+  useEffect((): (() => void) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape' || isHolding) return
       setIsHolding(true)
       holdStartRef.current = Date.now()
 
-      holdTimerRef.current = setInterval(() => {
+      holdTimerRef.current = setInterval((): void => {
         const elapsed = Date.now() - holdStartRef.current
         const progress = Math.min(elapsed / HOLD_DURATION, 1)
         setHoldProgress(progress)
@@ -120,7 +120,7 @@ export function ProtocolZero() {
       }, 16)
     }
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return
       if (holdTimerRef.current) clearInterval(holdTimerRef.current)
       setIsHolding(false)
@@ -137,14 +137,14 @@ export function ProtocolZero() {
   }, [isHolding, triggerProtocolZero])
 
   // Custom event trigger — for mobile gesture or manual dispatch
-  useEffect(() => {
-    const handler = () => triggerProtocolZero()
+  useEffect((): (() => void) => {
+    const handler = (): void => triggerProtocolZero()
     window.addEventListener('nexus:protocol-zero', handler)
     return () => window.removeEventListener('nexus:protocol-zero', handler)
   }, [triggerProtocolZero])
 
   // Cleanup
-  useEffect(() => {
+  useEffect((): (() => void) => {
     return () => sequenceRef.current.forEach(clearTimeout)
   }, [])
 

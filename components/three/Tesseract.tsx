@@ -70,9 +70,9 @@ export function Tesseract({
   scale        = 1.2,
   showInnerCube = true,
   modeOverride,
-}: TesseractProps) {
+}: TesseractProps): React.JSX.Element {
   const storeMode    = useNexusStore(state => state.mode)
-  const resolvedMode: 'apex' | 'haven' | 'default' = (modeOverride ?? storeMode) as any
+  const resolvedMode: 'apex' | 'haven' | 'default' = (modeOverride ?? storeMode) as 'apex' | 'haven' | 'default'
 
   // Rotation state
   const thetaRef        = useRef(0)
@@ -95,10 +95,10 @@ export function Tesseract({
   const innerPositions = useRef(new Float32Array(edges.length * 6))
 
   // Initialize buffer attributes
-  useEffect(() => {
+  useEffect((): void => {
     outerGeo.current.setAttribute('position', new BufferAttribute(outerPositions.current, 3))
     innerGeo.current.setAttribute('position', new BufferAttribute(innerPositions.current, 3))
-  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Materials
   const outerMat = useRef(new LineBasicMaterial({
@@ -122,7 +122,7 @@ export function Tesseract({
   const innerMesh = useRef(new LineSegments(innerGeo.current, innerMat.current))
 
   // React to mode changes
-  useEffect(() => {
+  useEffect((): void => {
     const v = MODE_VISUAL[resolvedMode]
     targetSpeedRef.current = ROTATION_SPEEDS[resolvedMode]
 
@@ -135,7 +135,7 @@ export function Tesseract({
   }, [resolvedMode])
 
   // Dispose on unmount
-  useEffect(() => {
+  useEffect((): (() => void) => {
     const og = outerGeo.current
     const ig = innerGeo.current
     const om = outerMat.current
@@ -143,7 +143,7 @@ export function Tesseract({
     return () => { og.dispose(); ig.dispose(); om.dispose(); im.dispose() }
   }, [])
 
-  useFrame((_, delta) => {
+  useFrame((_, delta): void => {
     // Clamp delta — prevents large jumps when tab is backgrounded
     const dt = Math.min(delta, 0.05)
 

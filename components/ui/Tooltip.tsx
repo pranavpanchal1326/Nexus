@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence, type MotionStyle } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   useState,
   useRef,
@@ -114,7 +114,7 @@ export function Tooltip({
               pointerEvents: 'none',
               zIndex: 100,
               boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-            } as MotionStyle}
+            } as import('framer-motion').MotionStyle}
           >
             {label}
           </motion.div>

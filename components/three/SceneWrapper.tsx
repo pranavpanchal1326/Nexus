@@ -27,7 +27,7 @@ export function SceneWrapper({
   className,
   height = '100%',
   showStats = false,
-}: SceneWrapperProps) {
+}: SceneWrapperProps): React.JSX.Element {
   return (
     <div
       className={`scene-wrapper ${className ?? ''}`}

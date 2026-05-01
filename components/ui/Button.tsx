@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, type HTMLMotionProps, type TargetAndTransition } from 'framer-motion'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 import { forwardRef } from 'react'
 import { SPRING, DURATION } from '@/lib/motion'
 import { playClick, initAudio } from '@/lib/audio'
@@ -114,7 +114,7 @@ function getVariantStyles(
 
 function getHoverStyles(
   variant: ButtonVariant
-): TargetAndTransition {
+): import('framer-motion').TargetAndTransition {
   switch (variant) {
     case 'primary':
       return { opacity: 0.85 }
@@ -173,17 +173,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ...SIZE_STYLES[size],
           width: block ? '100%' : undefined,
           ...style,
-        }}
-        whileHover={isDisabled ? undefined : getHoverStyles(variant)}
-        whileTap={
-          isDisabled
-            ? undefined
-            : {
-                scale: 0.97,
-                transition:
-                  mode === 'apex' ? SPRING.SNAP : SPRING.FLOAT,
-              }
-        }
+        } as import('framer-motion').MotionStyle}
+        {...(!isDisabled && {
+          whileHover: getHoverStyles(variant),
+          whileTap: {
+            scale: 0.97,
+            transition: mode === 'apex' ? SPRING.SNAP : SPRING.FLOAT,
+          },
+        })}
         transition={mode === 'apex' ? SPRING.SNAP : SPRING.FLOAT}
         {...props}
       >

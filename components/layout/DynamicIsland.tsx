@@ -17,10 +17,9 @@ interface DynamicIslandProps {
 }
 
 export function DynamicIsland({ 
-  userId: _userId, 
   preferredMode = 'auto',
   streak: initialStreak = 0 
-}: DynamicIslandProps) {
+}: DynamicIslandProps): React.JSX.Element {
   const [islandState, setIslandState] = useState<IslandState>('collapsed')
   const [currentEvent, setCurrentEvent] = useState<IslandEvent | null>(null)
   
@@ -30,31 +29,32 @@ export function DynamicIsland({
   const currentStreak = stats?.current_streak ?? initialStreak
 
   // Island initialization sequence
-  useEffect(() => {
+  useEffect((): (() => void) => {
     const timer = setTimeout(() => setIslandState('default'), 2000)
-    return () => clearTimeout(timer)
+    return (): void => clearTimeout(timer)
   }, [])
 
   // System event listener
-  useEffect(() => {
-    const handleIslandEvent = (e: Event) => {
+  useEffect((): (() => void) => {
+    const handleIslandEvent = (e: Event): void => {
       const customEvent = e as CustomEvent<IslandEvent>
       setCurrentEvent(customEvent.detail)
       setIslandState('expanded')
       
-      const collapseTimer = setTimeout(() => {
+      setTimeout(() => {
         setIslandState('default')
         setCurrentEvent(null)
       }, 4000)
       
-      return () => clearTimeout(collapseTimer)
+      // Cleanup for this specific event trigger is not possible via return in event listener
+      // but we add : void to satisfy lint
     }
     
     window.addEventListener('nexus:island-event', handleIslandEvent)
-    return () => window.removeEventListener('nexus:island-event', handleIslandEvent)
+    return (): void => window.removeEventListener('nexus:island-event', handleIslandEvent)
   }, [])
 
-  const handleIslandClick = useCallback(() => {
+  const handleIslandClick = useCallback((): void => {
     window.dispatchEvent(new CustomEvent('nexus:mode-transition'))
   }, [])
 
@@ -132,7 +132,7 @@ export function DynamicIsland({
 
 /* ─── Internal Sub-components ─────────────────────────── */
 
-function ModeDot({ mode }: { mode: Mode }) {
+function ModeDot({ mode }: { mode: Mode }): React.JSX.Element {
   const color = mode === 'apex' ? 'var(--color-apex)' : 'var(--color-haven)'
   return (
     <div
@@ -147,7 +147,7 @@ function ModeDot({ mode }: { mode: Mode }) {
   )
 }
 
-function ModeCluster({ mode }: { mode: Mode }) {
+function ModeCluster({ mode }: { mode: Mode }): React.JSX.Element {
   return (
     <div className="flex items-center gap-2">
       <ModeDot mode={mode} />
@@ -160,11 +160,11 @@ function ModeCluster({ mode }: { mode: Mode }) {
   )
 }
 
-function IslandDivider() {
+function IslandDivider(): React.JSX.Element {
   return <div className="island-divider" />
 }
 
-function StreakCluster({ streak }: { streak: number }) {
+function StreakCluster({ streak }: { streak: number }): React.JSX.Element {
   return (
     <div className="flex items-center gap-2">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-signal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -176,7 +176,7 @@ function StreakCluster({ streak }: { streak: number }) {
   )
 }
 
-function TimeCluster({ timeRemaining }: { timeRemaining: string }) {
+function TimeCluster({ timeRemaining }: { timeRemaining: string }): React.JSX.Element {
   return (
     <div className="flex items-center gap-2">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-disabled)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -187,7 +187,7 @@ function TimeCluster({ timeRemaining }: { timeRemaining: string }) {
   )
 }
 
-function EventIcon({ type }: { type: IslandEvent['icon'] }) {
+function EventIcon({ type }: { type: IslandEvent['icon'] }): React.JSX.Element {
   return (
     <div className="text-signal">
       {type === 'journal' && (
@@ -206,7 +206,7 @@ function EventIcon({ type }: { type: IslandEvent['icon'] }) {
   )
 }
 
-function EventCountdown({ duration }: { duration: number }) {
+function EventCountdown({ duration }: { duration: number }): React.JSX.Element {
   return (
     <div className="island-countdown">
       <motion.div

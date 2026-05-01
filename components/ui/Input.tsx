@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, type TextareaHTMLAttributes } from 'react'
+import { forwardRef, type TextareaHTMLAttributes, useId } from 'react'
 import type { InputHTMLAttributes } from 'react'
 
 // ─── Text Input ───────────────────────────────────────
@@ -15,7 +15,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, hint, style, id, ...props }, ref) => {
-    const inputId = id ?? `input-${Math.random().toString(36).slice(2, 7)}`
+    const generatedId = useId()
+    const inputId = id ?? generatedId
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -105,8 +106,8 @@ export interface TextareaProps
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, hint, minHeight = 120, style, id, ...props }, ref) => {
-    const textareaId =
-      id ?? `textarea-${Math.random().toString(36).slice(2, 7)}`
+    const generatedId = useId()
+    const textareaId = id ?? generatedId
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

@@ -76,7 +76,7 @@ export const ApexSpring = forwardRef<HTMLDivElement, ApexSpringProps>(
         {...presetProps}
         {...props}
         // Merge transition — prop transition overrides preset if provided
-        transition={props.transition ?? (presetProps as any).transition ?? SPRING.SNAP}
+        transition={props.transition ?? (presetProps as HTMLMotionProps<'div'>).transition ?? SPRING.SNAP}
       >
         {children}
       </MotionTag>
@@ -98,7 +98,7 @@ export function ApexButton({
   onClick,
   disabled,
   ...props
-}: HTMLMotionProps<'button'> & { disabled?: boolean }) {
+}: HTMLMotionProps<'button'> & { disabled?: boolean }): React.JSX.Element {
   const interactionProps = disabled ? {} : {
     whileTap: { scale: 0.95 },
     whileHover: { scale: 1.02 }
@@ -131,7 +131,7 @@ export function ApexCard({
   className,
   onClick,
   ...props
-}: HTMLMotionProps<'div'>) {
+}: HTMLMotionProps<'div'>): React.JSX.Element {
   const hoverProps = {
     whileHover: {
       y:             -3,

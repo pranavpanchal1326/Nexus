@@ -36,7 +36,7 @@ export default function UIKitTest(): React.JSX.Element {
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
         <span className="text-caption">Mode: {mode}</span>
         <Button variant="secondary" size="sm" mode={mode}
-          onClick={toggleMode}>
+          onClick={(): void => toggleMode()}>
           Toggle Mode
         </Button>
       </div>
@@ -96,7 +96,7 @@ export default function UIKitTest(): React.JSX.Element {
             variant="signal"
             size="sm"
             mode={mode}
-            onClick={() => {
+            onClick={(): void => {
               setIsAiProcessing(true)
               setTimeout(() => setIsAiProcessing(false), 3000)
             }}
@@ -116,15 +116,15 @@ export default function UIKitTest(): React.JSX.Element {
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <Button variant="secondary" size="sm" mode={mode}
-            onClick={() => setCount(c => c + 1)}>
+            onClick={(): void => setCount(c => c + 1)}>
             +1
           </Button>
           <Button variant="secondary" size="sm" mode={mode}
-            onClick={() => setCount(c => c + 10)}>
+            onClick={(): void => setCount(c => c + 10)}>
             +10
           </Button>
           <Button variant="ghost" size="sm" mode={mode}
-            onClick={() => setCount(0)}>
+            onClick={(): void => setCount(0)}>
             Reset
           </Button>
         </div>

@@ -27,7 +27,7 @@ function detectWebGL2(): boolean {
   }
 }
 
-export function WebGLCapabilityGate({ children }: WebGLCapabilityGateProps) {
+export function WebGLCapabilityGate({ children }: WebGLCapabilityGateProps): React.JSX.Element {
   const [status, setStatus] = useState<WebGLStatus>('detecting')
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export function WebGLCapabilityGate({ children }: WebGLCapabilityGateProps) {
 
 // ─── Fallback components ──────────────────────────────────────────────────────
 
-export function SceneLoadingFallback() {
+export function SceneLoadingFallback(): React.JSX.Element {
   return (
     <div className="scene-fallback scene-fallback--loading">
       {/* Subtle animated placeholder — not a spinner, not text */}
@@ -59,7 +59,7 @@ export function SceneLoadingFallback() {
   )
 }
 
-function SceneUnsupportedFallback() {
+function SceneUnsupportedFallback(): React.JSX.Element {
   return (
     <div className="scene-fallback scene-fallback--unsupported">
       {/* Static geometric placeholder — ASCII tesseract suggestion */}
