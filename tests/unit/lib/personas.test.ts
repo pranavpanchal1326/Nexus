@@ -24,9 +24,9 @@ describe('personas', () => {
       expect(COMMANDER_SYSTEM).toContain('120 words')
     })
     it('does not itself use prohibited phrases as responses', () => {
-      // We skip a simple not.toContain because the phrases are literally 
-      // in the prompt under "Hard prohibitions".
-      expect(COMMANDER_SYSTEM).toContain('Hard prohibitions')
+      // We skip a simple not.toContain because the phrases are literally
+      // in the prompt under the HARD LIMITS section.
+      expect(COMMANDER_SYSTEM).toContain('HARD LIMITS')
     })
   })
 
@@ -38,7 +38,8 @@ describe('personas', () => {
       expect(POET_SYSTEM).toContain('200 words')
     })
     it('prohibits bullet points', () => {
-      expect(POET_SYSTEM).toContain('Bullet points')
+      // Phase 4A prompt uses lowercase 'bullet points' in the HARD LIMITS section
+      expect(POET_SYSTEM).toContain('bullet points')
     })
     it('does not itself use bullet points in excessive quantity', () => {
       const lines = POET_SYSTEM.split('\n')

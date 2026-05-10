@@ -2,9 +2,9 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { Mode, ModePreference, PhysicsConfig } from '@/types/mode'
 
-// ─── State Shape ──────────────────────────────────────
+// ─── State Shape ──────────────────────────────────────────────────────────────
 interface NexusState {
-  // ─── Mode ────────────────────────────────────────
+  // ─── Mode ────────────────────────────────────────────────────────────────
   /** Active resolved mode — never 'auto' */
   mode: Mode
   /** User preference — may be 'auto' */
@@ -12,11 +12,32 @@ interface NexusState {
   /** True during APEX↔HAVEN cinematic transition */
   isTransitioning: boolean
 
-  // ─── AI ──────────────────────────────────────────
-  /** True during any active Groq API call */
-  isAiProcessing: boolean
+  // ─── AI — signal dot lifecycle ───────────────────────────────────────────
+  /**
+   * True while any Groq API call is in-flight.
+   * Derived from requestCount — never set directly.
+   */
+  signalActive: boolean
+  /**
+   * Count of concurrent in-flight Groq requests.
+   * signalActive = requestCount > 0
+   */
+  requestCount: number
+  /** Call before each Groq request begins. */
+  signalStart: () => void
+  /** Call after each Groq request completes or errors (always in finally). */
+  signalStop: () => void
 
-  // ─── UI ──────────────────────────────────────────
+  /**
+   * Legacy alias — kept for any existing code using isAiProcessing.
+   * Mirrors signalActive. Prefer signalActive for new code.
+   * @deprecated Use signalActive
+   */
+  isAiProcessing: boolean
+  /** @deprecated Use signalStart / signalStop */
+  setIsAiProcessing: (v: boolean) => void
+
+  // ─── UI ──────────────────────────────────────────────────────────────────
   /** Protocol ZERO emergency brake active */
   isProtocolZeroActive: boolean
   /** Right intel panel open on tablet */
@@ -28,34 +49,32 @@ interface NexusState {
   /** Master volume 0–1 */
   volume: number
 
-  // ─── Physics ─────────────────────────────────────
+  // ─── Physics ─────────────────────────────────────────────────────────────
   /** Current mode-aware spring physics */
   physics: PhysicsConfig
 
-  // ─── Actions ─────────────────────────────────────
-  setMode: (mode: Mode) => void
-  setModePreference: (pref: ModePreference) => void
-  setIsTransitioning: (v: boolean) => void
-  setIsAiProcessing: (v: boolean) => void
+  // ─── Actions ─────────────────────────────────────────────────────────────
+  setMode:                 (mode: Mode) => void
+  setModePreference:       (pref: ModePreference) => void
+  setIsTransitioning:      (v: boolean) => void
   setIsProtocolZeroActive: (v: boolean) => void
-  setIsIntelPanelOpen: (v: boolean) => void
-  setIsMuted: (v: boolean) => void
-  setVolume: (v: number) => void
-  toggleMode: () => void
-  toggleMute: () => void
+  setIsIntelPanelOpen:     (v: boolean) => void
+  setIsMuted:              (v: boolean) => void
+  setVolume:               (v: number) => void
+  toggleMode:              () => void
+  toggleMute:              () => void
   /** Compatibility alias for setIsIntelPanelOpen */
   toggleIntelPanel: () => void
 }
 
-// ─── Store ────────────────────────────────────────────
+// ─── Store ────────────────────────────────────────────────────────────────────
 export const useNexusStore = create<NexusState>()(
   devtools(
     (set): NexusState => ({
-      // ─── Defaults ──────────────────────────────
+      // ─── Defaults ──────────────────────────────────────────────────────
       mode:                 'apex',
       modePreference:       'auto',
       isTransitioning:      false,
-      isAiProcessing:       false,
       isProtocolZeroActive: false,
       isIntelPanelOpen:     false,
       intelPanelOpen:       false,
@@ -63,7 +82,40 @@ export const useNexusStore = create<NexusState>()(
       volume:               1,
       physics: { stiffness: 500, damping: 40, mass: 0.8 },
 
-      // ─── Actions ───────────────────────────────
+      // ─── Signal dot lifecycle ───────────────────────────────────────────
+      signalActive: false,
+      requestCount: 0,
+      isAiProcessing: false,   // legacy mirror
+
+      signalStart: () =>
+        set(
+          state => ({
+            requestCount:  state.requestCount + 1,
+            signalActive:  true,
+            isAiProcessing: true,
+          }),
+          false,
+          'signalStart'
+        ),
+
+      signalStop: () =>
+        set(
+          state => {
+            const newCount = Math.max(0, state.requestCount - 1)
+            return {
+              requestCount:  newCount,
+              signalActive:  newCount > 0,
+              isAiProcessing: newCount > 0,
+            }
+          },
+          false,
+          'signalStop'
+        ),
+
+      setIsAiProcessing: (isAiProcessing: boolean): void =>
+        set({ isAiProcessing }, false, 'setIsAiProcessing'),
+
+      // ─── Mode ──────────────────────────────────────────────────────────
       setMode: (mode: Mode): void =>
         set(
           (): Partial<NexusState> => ({
@@ -81,9 +133,6 @@ export const useNexusStore = create<NexusState>()(
 
       setIsTransitioning: (isTransitioning: boolean): void =>
         set({ isTransitioning }, false, 'setIsTransitioning'),
-
-      setIsAiProcessing: (isAiProcessing: boolean): void =>
-        set({ isAiProcessing }, false, 'setIsAiProcessing'),
 
       setIsProtocolZeroActive: (isProtocolZeroActive: boolean): void =>
         set({ isProtocolZeroActive }, false, 'setIsProtocolZeroActive'),
@@ -131,7 +180,7 @@ export const useNexusStore = create<NexusState>()(
         set(
           state => ({
             isIntelPanelOpen: !state.isIntelPanelOpen,
-            intelPanelOpen: !state.isIntelPanelOpen,
+            intelPanelOpen:   !state.isIntelPanelOpen,
           }),
           false,
           'toggleIntelPanel'
@@ -141,10 +190,28 @@ export const useNexusStore = create<NexusState>()(
   )
 )
 
-// ─── Selector Hooks — avoid re-render on unrelated state ──
+// ─── Selector Hooks — avoid re-render on unrelated state ─────────────────────
+// Use these instead of useNexusStore(state => state.x) for performance
+
 export const useMode = (): Mode =>
   useNexusStore(s => s.mode)
 
+/** True while any Groq request is in-flight */
+export const useSignal = (): boolean =>
+  useNexusStore(s => s.signalActive)
+
+/** signalStart action — stable reference */
+export const useSignalStart = (): (() => void) =>
+  useNexusStore(s => s.signalStart)
+
+/** signalStop action — stable reference */
+export const useSignalStop = (): (() => void) =>
+  useNexusStore(s => s.signalStop)
+
+export const usePhysics = (): PhysicsConfig =>
+  useNexusStore(s => s.physics)
+
+/** @deprecated Use useSignal */
 export const useIsAiProcessing = (): boolean =>
   useNexusStore(s => s.isAiProcessing)
 
