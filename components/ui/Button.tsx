@@ -1,208 +1,93 @@
 'use client'
+import { motion } from 'framer-motion'
+import { useNexusStore } from '@/store/nexusStore'
+import { SPRING } from '@/lib/motion'
+import { SignalDot } from './SignalDot'
+import type { HTMLMotionProps } from 'framer-motion'
 
-import { motion, type HTMLMotionProps } from 'framer-motion'
-import { forwardRef } from 'react'
-import { SPRING, DURATION } from '@/lib/motion'
-import { playClick, initAudio } from '@/lib/audio'
-import type { Mode } from '@/types/mode'
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// ─── Button Variants ──────────────────────────────────
-export type ButtonVariant =
-  | 'primary'    // filled — main actions
-  | 'secondary'  // bordered — secondary actions
-  | 'ghost'      // text only — tertiary actions
-  | 'signal'     // signal yellow — AI actions only
-  | 'danger'     // error red — destructive actions
+type ButtonVariant = 'signal' | 'ghost' | 'surface' | 'danger'
+type ButtonSize    = 'sm' | 'md' | 'lg'
 
-export type ButtonSize = 'sm' | 'md' | 'lg'
-
-export interface ButtonProps
-  extends Omit<HTMLMotionProps<'button'>, 'ref'> {
-  variant?: ButtonVariant
-  size?: ButtonSize
-  /** Current mode — determines spring physics + styling */
-  mode?: Mode
-  /** Loading state — shows pulse, disables interaction */
-  loading?: boolean
-  /** Full width */
-  block?: boolean
+interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
+  children:   React.ReactNode
+  variant?:   ButtonVariant
+  size?:      ButtonSize
+  loading?:   boolean
+  disabled?:  boolean
+  fullWidth?: boolean
+  /** Force specific mode — for auth pages before mode detection runs */
+  forceMode?: 'apex' | 'haven'
 }
 
-// ─── Style Maps ───────────────────────────────────────
-const SIZE_STYLES: Record<ButtonSize, React.CSSProperties> = {
-  sm: {
-    fontSize: '10px',
-    letterSpacing: '0.08em',
-    padding: '8px 14px',
-    height: '32px',
-  },
-  md: {
-    fontSize: '11px',
-    letterSpacing: '0.08em',
-    padding: '10px 20px',
-    height: '40px',
-  },
-  lg: {
-    fontSize: '12px',
-    letterSpacing: '0.08em',
-    padding: '14px 28px',
-    height: '48px',
-  },
+// ─── Style maps ───────────────────────────────────────────────────────────────
+
+const VARIANT_STYLES: Record<ButtonVariant, string> = {
+  signal:  'btn--signal',   // Signal border, signal text
+  ghost:   'btn--ghost',    // No border, secondary text
+  surface: 'btn--surface',  // Surface background, primary text
+  danger:  'btn--danger',   // Error color
 }
 
-function getVariantStyles(
-  variant: ButtonVariant,
-  mode: Mode,
-  disabled: boolean
-): React.CSSProperties {
-  const opacity = disabled ? 0.4 : 1
-
-  const base: React.CSSProperties = {
-    fontFamily: 'var(--font-mono)',
-    textTransform: 'uppercase',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    border: '1px solid transparent',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    opacity,
-    userSelect: 'none',
-    // APEX: sharp. HAVEN: slightly rounded.
-    borderRadius: mode === 'apex' ? '6px' : '8px',
-    transition: `border-color ${DURATION.CARD_HOVER}s`,
-  }
-
-  switch (variant) {
-    case 'primary':
-      return {
-        ...base,
-        background: 'var(--color-text-primary)',
-        color: 'var(--color-void)',
-        borderColor: 'var(--color-text-primary)',
-      }
-    case 'secondary':
-      return {
-        ...base,
-        background: 'transparent',
-        color: 'var(--color-text-secondary)',
-        borderColor: 'var(--color-border)',
-      }
-    case 'ghost':
-      return {
-        ...base,
-        background: 'transparent',
-        color: 'var(--color-text-secondary)',
-        borderColor: 'transparent',
-      }
-    case 'signal':
-      return {
-        ...base,
-        background: 'rgba(232,255,71,0.08)',
-        color: 'var(--color-signal)',
-        borderColor: 'rgba(232,255,71,0.25)',
-      }
-    case 'danger':
-      return {
-        ...base,
-        background: 'transparent',
-        color: 'var(--color-error)',
-        borderColor: 'rgba(255,68,68,0.3)',
-      }
-  }
+const SIZE_STYLES: Record<ButtonSize, string> = {
+  sm: 'btn--sm',    // h: 32px, text: 11px
+  md: 'btn--md',    // h: 44px, text: 12px (default)
+  lg: 'btn--lg',    // h: 52px, text: 13px
 }
 
-function getHoverStyles(
-  variant: ButtonVariant
-): import('framer-motion').TargetAndTransition {
-  switch (variant) {
-    case 'primary':
-      return { opacity: 0.85 }
-    case 'secondary':
-      return { borderColor: '#383838' }
-    case 'ghost':
-      return { color: 'var(--color-text-primary)' }
-    case 'signal':
-      return {
-        background: 'rgba(232,255,71,0.12)',
-        borderColor: 'rgba(232,255,71,0.4)',
-      }
-    case 'danger':
-      return {
-        background: 'rgba(255,68,68,0.06)',
-        borderColor: 'rgba(255,68,68,0.5)',
-      }
-  }
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function Button({
+  children,
+  variant   = 'signal',
+  size      = 'md',
+  loading   = false,
+  disabled  = false,
+  fullWidth = false,
+  forceMode,
+  className,
+  onClick,
+  ...props
+}: ButtonProps) {
+  const storeMode = useNexusStore(state => state.mode)
+  const mode      = forceMode ?? storeMode
+
+  const spring   = mode === 'apex' ? SPRING.SNAP : SPRING.FLOAT
+  const tapScale  = mode === 'apex' ? 0.95 : 0.97
+  const hoverScale = mode === 'apex' ? 1.02 : 1.015
+
+  const isDisabled = disabled || loading
+
+  return (
+    <motion.button
+      className={[
+        'btn',
+        VARIANT_STYLES[variant],
+        SIZE_STYLES[size],
+        fullWidth  ? 'btn--full'     : '',
+        isDisabled ? 'btn--disabled' : '',
+        loading    ? 'btn--loading'  : '',
+        className  ?? '',
+      ].filter(Boolean).join(' ')}
+      onClick={isDisabled ? undefined : onClick}
+      {...(!isDisabled && {
+        whileTap: { scale: tapScale },
+        whileHover: { scale: hoverScale }
+      })}
+      transition={spring}
+      disabled={isDisabled}
+      aria-disabled={isDisabled}
+      aria-busy={loading}
+      {...props}
+    >
+      {loading ? (
+        <span className="btn__loading-state">
+          <SignalDot />
+        </span>
+      ) : (
+        <span className="btn__label">{children}</span>
+      )}
+    </motion.button>
+  )
 }
-
-// ─── Component ────────────────────────────────────────
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      variant = 'secondary',
-      size = 'md',
-      mode = 'apex',
-      loading = false,
-      block = false,
-      disabled,
-      onClick,
-      children,
-      style,
-      ...props
-    },
-    ref
-  ) => {
-    const isDisabled = disabled === true || loading
-
-    const handleClick = (
-      e: React.MouseEvent<HTMLButtonElement>
-    ): void => {
-      if (isDisabled) return
-      initAudio()
-      playClick(mode)
-      onClick?.(e)
-    }
-
-    return (
-      <motion.button
-        ref={ref}
-        disabled={isDisabled}
-        onClick={handleClick}
-        style={{
-          ...getVariantStyles(variant, mode, isDisabled),
-          ...SIZE_STYLES[size],
-          width: block ? '100%' : undefined,
-          ...style,
-        } as import('framer-motion').MotionStyle}
-        {...(!isDisabled && {
-          whileHover: getHoverStyles(variant),
-          whileTap: {
-            scale: 0.97,
-            transition: mode === 'apex' ? SPRING.SNAP : SPRING.FLOAT,
-          },
-        })}
-        transition={mode === 'apex' ? SPRING.SNAP : SPRING.FLOAT}
-        {...props}
-      >
-        {loading ? (
-          <span
-            style={{
-              display: 'inline-block',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 'currentColor',
-              animation: 'signal-pulse 1.2s ease-in-out infinite',
-            }}
-          />
-        ) : (
-          children
-        )}
-      </motion.button>
-    )
-  }
-)
-
-Button.displayName = 'Button'
-
-export default Button

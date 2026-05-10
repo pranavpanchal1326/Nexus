@@ -1,117 +1,89 @@
 'use client'
-
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, type ReactNode } from 'react'
-import { modalVariants, backdropVariants } from '@/lib/motion'
+import { MODAL_VARIANTS, FADE_IN_VARIANTS } from '@/lib/motion'
 
-export interface ModalProps {
-  /** Controlled open state */
-  open: boolean
-  /** Called when backdrop clicked or Escape pressed */
-  onClose: () => void
-  /** Modal content */
-  children: ReactNode
-  /** Max width of modal panel */
-  maxWidth?: number
+interface ModalProps {
+  isOpen:     boolean
+  onClose:    () => void
+  children:   ReactNode
+  title?:     string
+  maxWidth?:  string
 }
 
 export function Modal({
-  open,
+  isOpen,
   onClose,
   children,
-  maxWidth = 560,
-}: ModalProps): React.JSX.Element {
-  // Close on Escape key
-  useEffect((): (() => void) | void => {
-    if (!open) return
+  title,
+  maxWidth = '480px',
+}: ModalProps) {
 
-    const handleKey = (e: KeyboardEvent): void => {
+
+  // Keyboard: Escape closes modal
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      // Note: Escape is also Protocol ZERO (hold 2s)
+      // Single tap closes modal — hold triggers Protocol ZERO
+      // Modal's single-tap handler fires before 2s hold completes
       if (e.key === 'Escape') onClose()
     }
-
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [open, onClose])
+  }, [isOpen, onClose])
 
-  // Prevent body scroll when open
-  useEffect((): (() => void) | void => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [open])
+  // Body scroll lock
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = 'hidden'
+    else        document.body.style.overflow = ''
+    return () =>  { document.body.style.overflow = '' }
+  }, [isOpen])
 
   return (
     <AnimatePresence>
-      {open && (
+      {isOpen && (
         <>
           {/* Backdrop */}
           <motion.div
-            key="modal-backdrop"
-            variants={backdropVariants}
-            initial="initial"
-            animate="animate"
+            className="modal-backdrop"
+            variants={FADE_IN_VARIANTS}
+            initial="hidden"
+            animate="visible"
             exit="exit"
             onClick={onClose}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(8,8,8,0.8)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 70,
-            }}
-            aria-hidden="true"
           />
 
           {/* Panel */}
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '24px',
-              zIndex: 70,
-              pointerEvents: 'none',
-            }}
+          <motion.div
+            className="modal-panel"
+            style={{ maxWidth }}
+            variants={MODAL_VARIANTS}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
           >
-            <motion.div
-              key="modal-panel"
-              role="dialog"
-              aria-modal="true"
-              variants={modalVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              style={{
-                background: 'var(--color-surface-raised)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-card)',
-                boxShadow: `
-                  inset 0 1px 0 rgba(255,255,255,0.04),
-                  0 24px 64px rgba(0,0,0,0.6)
-                `,
-                width: '100%',
-                maxWidth: `${maxWidth}px`,
-                maxHeight: '90dvh',
-                overflowY: 'auto',
-                pointerEvents: 'auto',
-                position: 'relative',
-              }}
-              onClick={e => e.stopPropagation()}
-            >
+            {title && (
+              <div className="modal-header">
+                <span className="modal-title">{title}</span>
+                <button
+                  className="modal-close"
+                  onClick={onClose}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <div className="modal-body">
               {children}
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </>
       )}
     </AnimatePresence>
   )
 }
-
-export default Modal

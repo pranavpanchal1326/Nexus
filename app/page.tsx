@@ -35,7 +35,7 @@ export default function UIKitTest(): React.JSX.Element {
       {/* Mode toggle */}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
         <span className="text-caption">Mode: {mode}</span>
-        <Button variant="secondary" size="sm" mode={mode}
+        <Button variant="surface" size="sm"
           onClick={(): void => toggleMode()}>
           Toggle Mode
         </Button>
@@ -45,19 +45,19 @@ export default function UIKitTest(): React.JSX.Element {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <p className="text-caption">Buttons — Mode: {mode}</p>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <Button variant="primary"   mode={mode} size="md">Primary</Button>
-          <Button variant="secondary" mode={mode} size="md">Secondary</Button>
-          <Button variant="ghost"     mode={mode} size="md">Ghost</Button>
-          <Button variant="signal"    mode={mode} size="md">Signal</Button>
-          <Button variant="danger"    mode={mode} size="md">Danger</Button>
-          <Button variant="secondary" mode={mode} size="md" loading>
+          <Button variant="surface"   size="md">Surface</Button>
+          <Button variant="surface"   size="md">Secondary</Button>
+          <Button variant="ghost"     size="md">Ghost</Button>
+          <Button variant="signal"    size="md">Signal</Button>
+          <Button variant="danger"    size="md">Danger</Button>
+          <Button variant="surface"   size="md" loading>
             Loading
           </Button>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Button variant="secondary" mode={mode} size="sm">Small</Button>
-          <Button variant="secondary" mode={mode} size="md">Medium</Button>
-          <Button variant="secondary" mode={mode} size="lg">Large</Button>
+          <Button variant="surface"  size="sm">Small</Button>
+          <Button variant="surface"  size="md">Medium</Button>
+          <Button variant="surface"  size="lg">Large</Button>
         </div>
       </div>
 
@@ -90,12 +90,11 @@ export default function UIKitTest(): React.JSX.Element {
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <SignalDot />
           <span className="text-caption">
-            {isAiProcessing ? 'AI Processing...' : 'AI Idle'}
+            {isAiProcessing ? 'AI Processing...' : 'AI Ready'}
           </span>
           <Button
             variant="signal"
             size="sm"
-            mode={mode}
             onClick={(): void => {
               setIsAiProcessing(true)
               setTimeout(() => setIsAiProcessing(false), 3000)
@@ -115,15 +114,15 @@ export default function UIKitTest(): React.JSX.Element {
             color="var(--color-signal)" />
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Button variant="secondary" size="sm" mode={mode}
+          <Button variant="surface" size="sm"
             onClick={(): void => setCount(c => c + 1)}>
             +1
           </Button>
-          <Button variant="secondary" size="sm" mode={mode}
+          <Button variant="surface" size="sm"
             onClick={(): void => setCount(c => c + 10)}>
             +10
           </Button>
-          <Button variant="ghost" size="sm" mode={mode}
+          <Button variant="ghost" size="sm"
             onClick={(): void => setCount(0)}>
             Reset
           </Button>

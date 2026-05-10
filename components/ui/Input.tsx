@@ -1,91 +1,41 @@
 'use client'
+import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 
-import { forwardRef, type TextareaHTMLAttributes, useId } from 'react'
-import type { InputHTMLAttributes } from 'react'
-
-// ─── Text Input ───────────────────────────────────────
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  /** Optional label rendered above input */
-  label?: string
-  /** Error message rendered below input */
-  error?: string
-  /** Helper text rendered below input */
-  hint?: string
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?:   string
+  error?:   string
+  hint?:    string
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, style, id, ...props }, ref) => {
-    const generatedId = useId()
-    const inputId = id ?? generatedId
+  function Input({ label, error, hint, className, id, ...props }, ref) {
+    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {label !== undefined && (
-          <label
-            htmlFor={inputId}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: error
-                ? 'var(--color-error)'
-                : 'var(--color-text-secondary)',
-            }}
-          >
+      <div className="input-group">
+        {label && (
+          <label htmlFor={inputId} className="input-label">
             {label}
           </label>
         )}
-
         <input
           ref={ref}
           id={inputId}
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '13px',
-            letterSpacing: '-0.01em',
-            color: 'var(--color-text-primary)',
-            background: 'var(--color-surface)',
-            border: `1px solid ${
-              error ? 'var(--color-error)' : 'var(--color-border)'
-            }`,
-            borderRadius: '6px',
-            padding: '10px 14px',
-            height: '40px',
-            width: '100%',
-            outline: 'none',
-            transition: 'border-color 200ms',
-            caretColor: 'var(--color-signal)',
-            ...style,
-          }}
-          onFocus={e => {
-            e.currentTarget.style.borderColor = error
-              ? 'var(--color-error)'
-              : 'var(--color-signal)'
-            props.onFocus?.(e)
-          }}
-          onBlur={e => {
-            e.currentTarget.style.borderColor = error
-              ? 'var(--color-error)'
-              : 'var(--color-border)'
-            props.onBlur?.(e)
-          }}
+          className={[
+            'input-field',
+            error     ? 'input-field--error'    : '',
+            className ?? '',
+          ].filter(Boolean).join(' ')}
           {...props}
         />
-
-        {(error !== undefined || hint !== undefined) && (
-          <p
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.04em',
-              color: error
-                ? 'var(--color-error)'
-                : 'var(--color-text-disabled)',
-            }}
-          >
-            {error ?? hint}
-          </p>
+        {/* Error — static, no animation — urgency needs no motion */}
+        {error && (
+          <span className="input-error" role="alert">
+            {error}
+          </span>
+        )}
+        {hint && !error && (
+          <span className="input-hint">{hint}</span>
         )}
       </div>
     )
@@ -94,91 +44,49 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = 'Input'
 
-// ─── Textarea ─────────────────────────────────────────
-export interface TextareaProps
-  extends TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string
-  error?: string
-  hint?: string
-  /** Minimum height in px */
+interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?:   string
+  error?:   string
+  hint?:    string
   minHeight?: number
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, hint, minHeight = 120, style, id, ...props }, ref) => {
-    const generatedId = useId()
-    const textareaId = id ?? generatedId
+  function Textarea({ label, error, hint, minHeight, className, id, style, ...props }, ref) {
+    const textareaId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {label !== undefined && (
-          <label
-            htmlFor={textareaId}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: error
-                ? 'var(--color-error)'
-                : 'var(--color-text-secondary)',
-            }}
-          >
+      <div className="input-group">
+        {label && (
+          <label htmlFor={textareaId} className="input-label">
             {label}
           </label>
         )}
-
         <textarea
           ref={ref}
           id={textareaId}
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '15px',
-            lineHeight: '1.65',
-            letterSpacing: '0.01em',
-            color: 'var(--color-text-primary)',
-            background: 'var(--color-surface)',
-            border: `1px solid ${
-              error ? 'var(--color-error)' : 'var(--color-border)'
-            }`,
-            borderRadius: '8px',
-            padding: '16px',
-            width: '100%',
-            minHeight: `${minHeight}px`,
-            outline: 'none',
+          className={[
+            'input-field',
+            error     ? 'input-field--error'    : '',
+            className ?? '',
+          ].filter(Boolean).join(' ')}
+          style={{ 
+            height: 'auto', 
+            minHeight: minHeight ?? 120, 
+            paddingTop: '12px',
+            paddingBottom: '12px',
             resize: 'vertical',
-            transition: 'border-color 200ms',
-            caretColor: 'var(--color-signal)',
-            ...style,
-          }}
-          onFocus={e => {
-            e.currentTarget.style.borderColor = error
-              ? 'var(--color-error)'
-              : 'var(--color-signal)'
-            props.onFocus?.(e)
-          }}
-          onBlur={e => {
-            e.currentTarget.style.borderColor = error
-              ? 'var(--color-error)'
-              : 'var(--color-border)'
-            props.onBlur?.(e)
+            ...style 
           }}
           {...props}
         />
-
-        {(error !== undefined || hint !== undefined) && (
-          <p
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.04em',
-              color: error
-                ? 'var(--color-error)'
-                : 'var(--color-text-disabled)',
-            }}
-          >
-            {error ?? hint}
-          </p>
+        {error && (
+          <span className="input-error" role="alert">
+            {error}
+          </span>
+        )}
+        {hint && !error && (
+          <span className="input-hint">{hint}</span>
         )}
       </div>
     )
@@ -186,5 +94,3 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 )
 
 Textarea.displayName = 'Textarea'
-
-export default Input

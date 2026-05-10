@@ -17,23 +17,22 @@ interface ModeSpringProps extends HTMLMotionProps<'div'> {
 
 // ─── Component — auto-selects physics based on mode ──────────────────────────
 
-export function ModeSpring({ ...props }: ModeSpringProps): React.JSX.Element {
+export function ModeSpring({ ...props }: ModeSpringProps) {
   const mode = useNexusStore(state => state.mode)
-  const resolvedPreset = props.preset === 'breathe' ? 'none' : props.preset
-  
+  const { preset = 'none', ...rest } = props
   return mode === 'apex'
-    ? <ApexSpring  {...props} preset={resolvedPreset as 'press' | 'hover' | 'reveal' | 'none'} />
-    : <HavenSpring {...props} />
+    ? <ApexSpring  {...rest} preset={preset === 'breathe' ? 'none' : preset} />
+    : <HavenSpring {...rest} preset={preset} />
 }
 
-export function ModeButton(props: HTMLMotionProps<'button'> & { disabled?: boolean }): React.JSX.Element {
+export function ModeButton(props: HTMLMotionProps<'button'> & { disabled?: boolean }) {
   const mode = useNexusStore(state => state.mode)
   return mode === 'apex'
     ? <ApexButton  {...props} />
     : <HavenButton {...props} />
 }
 
-export function ModeCard(props: HTMLMotionProps<'div'>): React.JSX.Element {
+export function ModeCard(props: HTMLMotionProps<'div'>) {
   const mode = useNexusStore(state => state.mode)
   return mode === 'apex'
     ? <ApexCard  {...props} />

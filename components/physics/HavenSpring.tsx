@@ -82,8 +82,8 @@ export const HavenSpring = forwardRef<HTMLDivElement, HavenSpringProps>(
         ref={ref}
         className={className}
         {...presetProps}
-        {...props}
-        transition={props.transition ?? (presetProps as HTMLMotionProps<'div'>).transition ?? SPRING.FLOAT}
+        {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
+        transition={props.transition ?? (presetProps as any).transition ?? SPRING.FLOAT}
       >
         {children}
       </MotionTag>
@@ -104,24 +104,22 @@ export function HavenButton({
   onClick,
   disabled,
   ...props
-}: HTMLMotionProps<'button'> & { disabled?: boolean }): React.JSX.Element {
-  const interactionProps = disabled ? {} : {
-    whileTap: { scale: 0.97 },
-    whileHover: { scale: 1.015 }
-  }
-
+}: HTMLMotionProps<'button'> & { disabled?: boolean }) {
   return (
     <motion.button
       className={className}
-      onClick={disabled ? undefined : onClick}
+      {...(onClick && !disabled ? { onClick } : {})}
+      {...(!disabled && {
+        whileTap: { scale: 0.97 },
+        whileHover: { scale: 1.015 }
+      })}
       transition={SPRING.FLOAT}
       style={{
         cursor:  disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1,
         ...props.style,
       }}
-      {...interactionProps}
-      {...props}
+      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
     >
       {children}
     </motion.button>
@@ -136,25 +134,19 @@ export function HavenCard({
   className,
   onClick,
   ...props
-}: HTMLMotionProps<'div'>): React.JSX.Element {
-  const hoverProps = {
-    whileHover: {
-      scale:       1.008,
-      borderColor: '#222222',
-      transition:  SPRING.FLOAT,
-    }
-  }
-
-  const tapProps = onClick ? { whileTap: { scale: 0.995, transition: SPRING.FLOAT } } : {}
-
+}: HTMLMotionProps<'div'>) {
   return (
     <motion.div
       className={`card ${className ?? ''}`}
-      onClick={onClick}
+      {...(onClick ? { onClick } : {})}
+      whileHover={{
+        scale:       1.008,
+        borderColor: '#222222',
+        transition:  SPRING.FLOAT,
+      }}
+      {...(onClick && { whileTap: { scale: 0.995, transition: SPRING.FLOAT } })}
       transition={SPRING.FLOAT}
-      {...hoverProps}
-      {...tapProps}
-      {...props}
+      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
     >
       {children}
     </motion.div>

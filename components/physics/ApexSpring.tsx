@@ -74,9 +74,9 @@ export const ApexSpring = forwardRef<HTMLDivElement, ApexSpringProps>(
         ref={ref}
         className={className}
         {...presetProps}
-        {...props}
+        {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
         // Merge transition — prop transition overrides preset if provided
-        transition={props.transition ?? (presetProps as HTMLMotionProps<'div'>).transition ?? SPRING.SNAP}
+        transition={props.transition ?? (presetProps as any).transition ?? SPRING.SNAP}
       >
         {children}
       </MotionTag>
@@ -98,24 +98,22 @@ export function ApexButton({
   onClick,
   disabled,
   ...props
-}: HTMLMotionProps<'button'> & { disabled?: boolean }): React.JSX.Element {
-  const interactionProps = disabled ? {} : {
-    whileTap: { scale: 0.95 },
-    whileHover: { scale: 1.02 }
-  }
-
+}: HTMLMotionProps<'button'> & { disabled?: boolean }) {
   return (
     <motion.button
       className={className}
-      onClick={disabled ? undefined : onClick}
+      {...(onClick && !disabled ? { onClick } : {})}
+      {...(!disabled && {
+        whileTap: { scale: 0.95 },
+        whileHover: { scale: 1.02 }
+      })}
       transition={SPRING.SNAP}
       style={{
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1,
         ...props.style,
       }}
-      {...interactionProps}
-      {...props}
+      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
     >
       {children}
     </motion.button>
@@ -131,25 +129,19 @@ export function ApexCard({
   className,
   onClick,
   ...props
-}: HTMLMotionProps<'div'>): React.JSX.Element {
-  const hoverProps = {
-    whileHover: {
-      y:             -3,
-      borderColor:   '#262626',
-      transition:    SPRING.SNAP,
-    }
-  }
-
-  const tapProps = onClick ? { whileTap: { scale: 0.99, transition: SPRING.SNAP } } : {}
-
+}: HTMLMotionProps<'div'>) {
   return (
     <motion.div
       className={`card ${className ?? ''}`}
-      onClick={onClick}
+      {...(onClick ? { onClick } : {})}
+      whileHover={{
+        y:             -3,
+        borderColor:   '#262626',
+        transition:    SPRING.SNAP,
+      }}
+      {...(onClick && { whileTap: { scale: 0.99, transition: SPRING.SNAP } })}
       transition={SPRING.SNAP}
-      {...hoverProps}
-      {...tapProps}
-      {...props}
+      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
     >
       {children}
     </motion.div>
