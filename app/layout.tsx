@@ -1,74 +1,72 @@
-import type { Metadata } from 'next'
-import { Instrument_Serif } from 'next/font/google'
-import { Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Instrument_Serif, Geist_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
-import './globals.css'
+import '@/styles/globals.css'
 
-/* ─── Instrument Serif ───────────────────────────────────
-   Role: Headings (.text-display, .text-heading, .text-oracle)
-   Weight 400 only — confidence does not shout
-   ───────────────────────────────────────────────────────── */
+// ─── Font Configuration ───────────────────────────────────────────────────────
+
 const instrumentSerif = Instrument_Serif({
-  weight: ['400'],
-  subsets: ['latin'],
-  display: 'swap',
+  weight:   ['400'],
+  subsets:  ['latin'],
+  display:  'swap',
   variable: '--font-serif',
-  preload: true,
+  style:    ['normal', 'italic'],
 })
 
-/* ─── Geist Mono ─────────────────────────────────────────
-   Role: Data, numbers, captions, inputs, Commander AI text
-   Variable weight for flexibility
-   ───────────────────────────────────────────────────────── */
 const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  display: 'swap',
+  subsets:  ['latin'],
+  display:  'swap',
   variable: '--font-mono',
-  preload: true,
 })
 
-/* ─── Satoshi ────────────────────────────────────────────
-   Role: Body text, UI prose, HAVEN ambient text
-   Local variable font — NOT on Google Fonts
-   Zero CDN dependency in production
-   ───────────────────────────────────────────────────────── */
+// Satoshi is not on Google Fonts — local woff2
 const satoshi = localFont({
-  src: '../public/fonts/Satoshi-Variable.woff2',
+  src:     '../public/fonts/Satoshi-Variable.woff2',
   variable: '--font-sans',
   display: 'swap',
-  preload: true,
-  fallback: ['system-ui', 'sans-serif'],
-  adjustFontFallback: false,
+  weight:  '300 900',
 })
 
+// ─── Metadata ────────────────────────────────────────────────────────────────
+
 export const metadata: Metadata = {
-  title: {
-    default: 'NEXUS',
-    template: '%s — NEXUS',
-  },
-  description: 'Void Intelligence OS — Engineered for 2026',
-  robots: {
-    index: false,
-    follow: false,
+  title:       'NEXUS — Intelligence Operating System',
+  description: 'Cognitive and physical intelligence tracking.',
+  manifest:    '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
   },
 }
+
+export const viewport: Viewport = {
+  themeColor:    '#080808',
+  colorScheme:   'dark',
+  width:         'device-width',
+  initialScale:  1,
+  maximumScale:  1,
+}
+
+// ─── Root Layout ─────────────────────────────────────────────────────────────
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}): React.JSX.Element {
+}) {
   return (
     <html
       lang="en"
-      className={`
-        ${instrumentSerif.variable}
-        ${geistMono.variable}
-        ${satoshi.variable}
-      `.trim()}
+      className={`${instrumentSerif.variable} ${geistMono.variable} ${satoshi.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-void text-primary scroll-void">
+      <head>
+        {/* Preconnect for Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body>
+        {/* Global grain overlay — sits above everything */}
+        <div className="shell-grain" aria-hidden="true" />
         {children}
       </body>
     </html>
