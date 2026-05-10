@@ -6,6 +6,7 @@ import { IntelPanel } from '@/components/layout/IntelPanel'
 import { DynamicIsland } from '@/components/layout/DynamicIsland'
 import { ModeTransition } from '@/components/layout/ModeTransition'
 import { ProtocolZero } from '@/components/layout/ProtocolZero'
+import { DashboardShortcuts } from '@/components/layout/DashboardShortcuts'
 import type { Profile } from '@/types/database'
 import type { PreferredMode } from '@/hooks/useTimeMode'
 
@@ -31,6 +32,7 @@ export default async function DashboardLayout({
     <Shell>
       <ModeTransition />
       <ProtocolZero />
+      <DashboardShortcuts />
       <DynamicIsland
         userId={user.id}
         preferredMode={profile?.preferred_mode ?? 'auto'}
