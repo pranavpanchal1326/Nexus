@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import { useNexusStore } from '@/store/nexusStore'
 import { SPRING } from '@/lib/motion'
+import { playSound } from '@/lib/audio'
 import { SignalDot } from './SignalDot'
 import type { HTMLMotionProps } from 'framer-motion'
 
@@ -70,7 +71,10 @@ export function Button({
         loading    ? 'btn--loading'  : '',
         className  ?? '',
       ].filter(Boolean).join(' ')}
-      onClick={isDisabled ? undefined : onClick}
+      onClick={isDisabled ? undefined : (e) => {
+        playSound('button-press')
+        onClick?.(e)
+      }}
       {...(!isDisabled && {
         whileTap: { scale: tapScale },
         whileHover: { scale: hoverScale }

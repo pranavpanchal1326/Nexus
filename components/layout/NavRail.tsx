@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { SignalDot } from '@/components/ui/SignalDot'
 import { useNexusStore } from '@/store/nexusStore'
+import { useAudioEvents } from '@/hooks/useAudio'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 
@@ -36,6 +37,7 @@ export function NavRail({ user, profile }: NavRailProps): React.JSX.Element {
   const pathname = usePathname()
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const physics = useNexusStore(state => state.physics)
+  const { playNav } = useAudioEvents()
 
   const isActive = (href: string): boolean => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -90,6 +92,7 @@ export function NavRail({ user, profile }: NavRailProps): React.JSX.Element {
                   <Link
                     href={item.href}
                     className={`nav-item ${active ? 'nav-item--active' : ''}`}
+                    onClick={playNav}
                   >
                     <item.icon size={20} strokeWidth={1.5} />
                   </Link>
@@ -116,6 +119,7 @@ export function NavRail({ user, profile }: NavRailProps): React.JSX.Element {
             key={item.href}
             href={item.href}
             className={`nav-item ${isActive(item.href) ? 'nav-item--active' : ''}`}
+            onClick={playNav}
           >
             <item.icon size={22} strokeWidth={1.5} />
           </Link>
@@ -123,6 +127,7 @@ export function NavRail({ user, profile }: NavRailProps): React.JSX.Element {
         <Link 
           href="/settings"
           className={`nav-item ${isActive('/settings') ? 'nav-item--active' : ''}`}
+          onClick={playNav}
         >
           <User size={22} strokeWidth={1.5} />
         </Link>

@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, type ReactNode } from 'react'
 import { MODAL_VARIANTS, FADE_IN_VARIANTS } from '@/lib/motion'
+import { playSound } from '@/lib/audio'
 
 interface ModalProps {
   isOpen:     boolean
@@ -18,6 +19,12 @@ export function Modal({
   title,
   maxWidth = '480px',
 }: ModalProps) {
+
+  // Audio: play sounds on open/close
+  useEffect(() => {
+    if (isOpen) playSound('modal-open')
+    else        playSound('modal-close')
+  }, [isOpen])
 
 
   // Keyboard: Escape closes modal

@@ -1,462 +1,672 @@
 /**
  * NEXUS v2.0 — Web Audio Engine
- * Algorithmic sound generation — zero file dependencies
- * Mode-aware: APEX = Commander, HAVEN = Poet
- * PRD Section 4 (Tech Stack) — replaces Howler entirely
+ * Pure algorithmic synthesis — zero audio file dependencies
+ * All sounds generated from oscillators, noise buffers, and filters
+ * Server-safe — all audio code guarded by isBrowser checks
  */
 
-import type { Mode } from '@/types/mode'
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// ─── Audio Context Singleton ──────────────────────────
-// Single context for entire app lifetime
-// Created lazily on first user gesture
-let ctx: AudioContext | null = null
-let masterGain: GainNode | null = null
+export type SoundId =
+  | 'mode-apex'
+  | 'mode-haven'
+  | 'protocol-zero'
+  | 'nav-tap'
+  | 'button-press'
+  | 'modal-open'
+  | 'modal-close'
+  | 'journal-save'
+  | 'gym-log'
+  | 'duel-start'
+  | 'duel-win'
+  | 'duel-lose'
+  | 'oracle-start'
+  | 'word-appear'
+  | 'streak-milestone'
+
+export type AudioMode = 'apex' | 'haven'
+
+interface AudioEngineState {
+  context:        AudioContext | null
+  masterGain:     GainNode | null
+  ambientNodes:   AudioNode[]
+  muted:          boolean
+  volume:         number   // 0–1
+  ambientActive:  boolean
+}
+
+// ─── Singleton state ──────────────────────────────────────────────────────────
+
+const state: AudioEngineState = {
+  context:       null,
+  masterGain:    null,
+  ambientNodes:  [],
+  muted:         false,
+  volume:        0.7,
+  ambientActive: false,
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const isBrowser = typeof window !== 'undefined'
+
+// All volumes relative to master — quiet by default
+// NEXUS sounds confirm, they do not announce
+const VOLUMES = {
+  'mode-apex':        0.08,
+  'mode-haven':       0.06,
+  'protocol-zero':    0.15,
+  'nav-tap':          0.04,
+  'button-press':     0.05,
+  'modal-open':       0.04,
+  'modal-close':      0.03,
+  'journal-save':     0.07,
+  'gym-log':          0.06,
+  'duel-start':       0.08,
+  'duel-win':         0.09,
+  'duel-lose':        0.05,
+  'oracle-start':     0.05,
+  'word-appear':      0.02,
+  'streak-milestone': 0.10,
+} as const
+
+// ─── AudioContext management ──────────────────────────────────────────────────
 
 /**
- * Get or create the AudioContext singleton.
- * Must be called inside a user gesture handler.
- * Returns null silently if Web Audio unavailable.
+ * Get or create AudioContext.
+ * Must be called from a user gesture on first use.
+ * Subsequent calls return the same context.
  */
 function getContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null
+  if (!isBrowser) return null
 
-  if (!ctx) {
-    try {
-      ctx = new AudioContext()
+  try {
+    if (!state.context) {
+      state.context   = new AudioContext()
+      state.masterGain = state.context.createGain()
+      state.masterGain.gain.value = state.muted ? 0 : state.volume
+      state.masterGain.connect(state.context.destination)
+    }
 
-      // Master gain — global volume control
-      masterGain = ctx.createGain()
-      masterGain.gain.setValueAtTime(0.4, ctx.currentTime)
-      masterGain.connect(ctx.destination)
-    } catch {
-      return null
+    // Resume if suspended — browsers suspend AudioContext until user gesture
+    if (state.context.state === 'suspended') {
+      state.context.resume().catch(() => {/* silent */})
+    }
+
+    return state.context
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Connect a node through master gain.
+ * All sounds route through master for global volume/mute control.
+ */
+function connectToMaster(node: AudioNode): void {
+  if (state.masterGain) node.connect(state.masterGain)
+}
+
+// ─── Primitive synthesis building blocks ──────────────────────────────────────
+
+/**
+ * Create a simple oscillator with gain envelope.
+ * The most common synthesis primitive in NEXUS.
+ */
+function createOscillatorTone(
+  ctx:      AudioContext,
+  freq:     number,
+  type:     OscillatorType,
+  attack:   number,
+  decay:    number,
+  peak:     number,
+  start:    number = ctx.currentTime
+): void {
+  const osc  = ctx.createOscillator()
+  const gain = ctx.createGain()
+
+  osc.type = type
+  osc.frequency.setValueAtTime(freq, start)
+
+  gain.gain.setValueAtTime(0, start)
+  gain.gain.linearRampToValueAtTime(peak, start + attack)
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + attack + decay)
+
+  osc.connect(gain)
+  connectToMaster(gain)
+
+  osc.start(start)
+  osc.stop(start + attack + decay + 0.01)
+}
+
+/**
+ * Create a frequency-swept oscillator.
+ * Used for APEX rising tones — directional, driven upward.
+ */
+function createFrequencySweep(
+  ctx:      AudioContext,
+  freqFrom: number,
+  freqTo:   number,
+  type:     OscillatorType,
+  duration: number,
+  peak:     number,
+  start:    number = ctx.currentTime
+): void {
+  const osc  = ctx.createOscillator()
+  const gain = ctx.createGain()
+
+  osc.type = type
+  osc.frequency.setValueAtTime(freqFrom, start)
+  osc.frequency.exponentialRampToValueAtTime(freqTo, start + duration)
+
+  gain.gain.setValueAtTime(0, start)
+  gain.gain.linearRampToValueAtTime(peak, start + 0.01)
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+
+  osc.connect(gain)
+  connectToMaster(gain)
+
+  osc.start(start)
+  osc.stop(start + duration + 0.05)
+}
+
+/**
+ * Create a white/brown noise burst.
+ * Used for percussive sounds — gym log, button press confirmations.
+ */
+function createNoiseBurst(
+  ctx:      AudioContext,
+  duration: number,
+  peak:     number,
+  color:    'white' | 'brown' = 'white',
+  start:    number = ctx.currentTime
+): void {
+  const bufferSize = ctx.sampleRate * duration
+  const buffer     = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+  const data       = buffer.getChannelData(0)
+
+  if (color === 'white') {
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1)
+    }
+  } else {
+    // Brown noise — integrate white noise for warmer character
+    let lastOut = 0
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1
+      lastOut = (lastOut + 0.02 * white) / 1.02
+      data[i] = lastOut * 3.5
     }
   }
 
-  // Resume if suspended (autoplay policy)
-  if (ctx.state === 'suspended') {
-    void ctx.resume()
-  }
+  const source  = ctx.createBufferSource()
+  const gain    = ctx.createGain()
+  const filter  = ctx.createBiquadFilter()
 
-  return ctx
-}
+  source.buffer = buffer
 
-// ─── Core Synthesis Primitives ────────────────────────
+  // High-pass filter for white — removes low-end rumble
+  // Low-pass filter for brown — keeps warmth, removes harshness
+  filter.type            = color === 'white' ? 'highpass' : 'lowpass'
+  filter.frequency.value = color === 'white' ? 2000 : 400
 
-/**
- * Brown noise buffer — warm, low rumble
- * Used in HAVEN mode sounds
- */
-function createBrownNoise(audioCtx: AudioContext): AudioBuffer {
-  const bufferSize = audioCtx.sampleRate * 0.5
-  const buffer = audioCtx.createBuffer(
-    1,
-    bufferSize,
-    audioCtx.sampleRate
-  )
-  const data = buffer.getChannelData(0)
+  gain.gain.setValueAtTime(peak, start)
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
 
-  let lastOut = 0
-  for (let i = 0; i < bufferSize; i++) {
-    const white = Math.random() * 2 - 1
-    data[i] = (lastOut + 0.02 * white) / 1.02
-    lastOut = data[i]
-    data[i] *= 3.5
-  }
-
-  return buffer
-}
-
-/**
- * Pink noise buffer — balanced, natural
- * Used in APEX mode sounds
- */
-function createPinkNoise(audioCtx: AudioContext): AudioBuffer {
-  const bufferSize = audioCtx.sampleRate * 0.5
-  const buffer = audioCtx.createBuffer(
-    1,
-    bufferSize,
-    audioCtx.sampleRate
-  )
-  const data = buffer.getChannelData(0)
-
-  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
-
-  for (let i = 0; i < bufferSize; i++) {
-    const white = Math.random() * 2 - 1
-    b0 = 0.99886 * b0 + white * 0.0555179
-    b1 = 0.99332 * b1 + white * 0.0750759
-    b2 = 0.96900 * b2 + white * 0.1538520
-    b3 = 0.86650 * b3 + white * 0.3104856
-    b4 = 0.55000 * b4 + white * 0.5329522
-    b5 = -0.7616 * b5 - white * 0.0168980
-    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11
-    b6 = white * 0.115926
-  }
-
-  return buffer
-}
-
-/**
- * Shaped envelope — attack, sustain, release
- */
-function applyEnvelope(
-  gainNode: GainNode,
-  audioCtx: AudioContext,
-  options: {
-    attack: number
-    sustain: number
-    release: number
-    peak: number
-  }
-): void {
-  const { attack, sustain, release, peak } = options
-  const now = audioCtx.currentTime
-
-  gainNode.gain.setValueAtTime(0, now)
-  gainNode.gain.linearRampToValueAtTime(peak, now + attack)
-  gainNode.gain.setValueAtTime(peak, now + attack + sustain)
-  gainNode.gain.exponentialRampToValueAtTime(
-    0.0001,
-    now + attack + sustain + release
-  )
-}
-
-// ─── Sound Definitions ────────────────────────────────
-
-/**
- * UI Click — key interaction feedback
- * APEX: sharp, precise click
- * HAVEN: soft, rounded tap
- */
-export function playClick(mode: Mode = 'apex'): void {
-  if (typeof window === 'undefined') return
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
-
-  const osc = audioCtx.createOscillator()
-  const gain = audioCtx.createGain()
-
-  osc.connect(gain)
-  gain.connect(masterGain)
-
-  if (mode === 'apex') {
-    // Sharp click — higher frequency, fast attack
-    osc.type = 'square'
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(
-      200,
-      audioCtx.currentTime + 0.04
-    )
-    applyEnvelope(gain, audioCtx, {
-      attack: 0.001,
-      sustain: 0.01,
-      release: 0.04,
-      peak: 0.15,
-    })
-  } else {
-    // Soft tap — lower frequency, gentle attack
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(320, audioCtx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(
-      160,
-      audioCtx.currentTime + 0.08
-    )
-    applyEnvelope(gain, audioCtx, {
-      attack: 0.008,
-      sustain: 0.02,
-      release: 0.1,
-      peak: 0.1,
-    })
-  }
-
-  osc.start(audioCtx.currentTime)
-  osc.stop(audioCtx.currentTime + 0.2)
-}
-
-/**
- * Mode transition — cinematic moment
- * APEX→HAVEN: descending tone, warm
- * HAVEN→APEX: ascending tone, bright
- */
-export function playModeTransition(
-  toMode: Mode
-): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
-
-  // Layered tones for richness
-  const frequencies =
-    toMode === 'apex'
-      ? [220, 440, 880]   // Ascending — Commander awakens
-      : [880, 440, 220]   // Descending — Poet settles
-
-  frequencies.forEach((freq, i) => {
-    const osc = audioCtx.createOscillator()
-    const gain = audioCtx.createGain()
-    const delay = i * 0.08
-
-    osc.connect(gain)
-    gain.connect(masterGain!)
-
-    osc.type = toMode === 'apex' ? 'triangle' : 'sine'
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay)
-
-    gain.gain.setValueAtTime(0, audioCtx.currentTime + delay)
-    gain.gain.linearRampToValueAtTime(
-      0.08,
-      audioCtx.currentTime + delay + 0.05
-    )
-    gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      audioCtx.currentTime + delay + 0.6
-    )
-
-    osc.start(audioCtx.currentTime + delay)
-    osc.stop(audioCtx.currentTime + delay + 0.7)
-  })
-}
-
-/**
- * AI response begin — Oracle starts speaking
- * Subtle shimmer indicating intelligence activating
- */
-export function playOracleActivate(mode: Mode = 'apex'): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
-
-  const noiseBuffer =
-    mode === 'apex'
-      ? createPinkNoise(audioCtx)
-      : createBrownNoise(audioCtx)
-
-  const source = audioCtx.createBufferSource()
-  source.buffer = noiseBuffer
-
-  // Bandpass filter — shapes noise into a tone
-  const filter = audioCtx.createBiquadFilter()
-  filter.type = 'bandpass'
-  filter.frequency.setValueAtTime(
-    mode === 'apex' ? 2400 : 800,
-    audioCtx.currentTime
-  )
-  filter.Q.setValueAtTime(8, audioCtx.currentTime)
-
-  const gain = audioCtx.createGain()
   source.connect(filter)
   filter.connect(gain)
-  gain.connect(masterGain)
+  connectToMaster(gain)
 
-  applyEnvelope(gain, audioCtx, {
-    attack: mode === 'apex' ? 0.02 : 0.08,
-    sustain: 0.1,
-    release: mode === 'apex' ? 0.15 : 0.4,
-    peak: 0.12,
-  })
-
-  source.start(audioCtx.currentTime)
-  source.stop(audioCtx.currentTime + 0.7)
+  source.start(start)
 }
 
 /**
- * Streak milestone — achievement moment
- * Ascending harmonic series — satisfying, earned
+ * Create a chord — multiple oscillators at harmonic intervals.
+ * Used for HAVEN mode sounds — warm, resonant, multiple harmonics.
  */
-export function playStreakMilestone(): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
-
-  // Pentatonic ascending — universally satisfying
-  const notes = [261.63, 329.63, 392.0, 523.25, 659.25]
-
-  notes.forEach((freq, i) => {
-    const osc = audioCtx.createOscillator()
-    const gain = audioCtx.createGain()
-    const delay = i * 0.06
-
-    osc.connect(gain)
-    gain.connect(masterGain!)
-
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay)
-
-    gain.gain.setValueAtTime(0, audioCtx.currentTime + delay)
-    gain.gain.linearRampToValueAtTime(
-      0.1,
-      audioCtx.currentTime + delay + 0.02
+function createChord(
+  ctx:         AudioContext,
+  frequencies: number[],
+  type:        OscillatorType,
+  attack:      number,
+  decay:       number,
+  peak:        number,
+  start:       number = ctx.currentTime
+): void {
+  frequencies.forEach((freq, i) => {
+    createOscillatorTone(
+      ctx,
+      freq,
+      type,
+      attack + i * 0.04,      // stagger entry slightly — natural chord voicing
+      decay,
+      peak / frequencies.length,
+      start + i * 0.02,
     )
-    gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      audioCtx.currentTime + delay + 0.4
-    )
-
-    osc.start(audioCtx.currentTime + delay)
-    osc.stop(audioCtx.currentTime + delay + 0.5)
   })
 }
 
+// ─── Individual sound implementations ────────────────────────────────────────
+
+const SOUNDS: Record<SoundId, (ctx: AudioContext, vol: number) => void> = {
+
+  // ─── APEX mode activation ─────────────────────────────────────────────────
+  // Rising frequency sweep — directional, cold, Commander authority
+  'mode-apex': (ctx, vol) => {
+    createFrequencySweep(ctx, 220, 440, 'sine', 0.3,  vol, ctx.currentTime)
+    createFrequencySweep(ctx, 110, 220, 'sine', 0.35, vol * 0.4, ctx.currentTime + 0.05)
+    // High harmonic shimmer
+    createFrequencySweep(ctx, 880, 1320, 'sine', 0.2, vol * 0.15, ctx.currentTime + 0.1)
+  },
+
+  // ─── HAVEN mode activation ───────────────────────────────────────────────
+  // Descending chord — warm, resonant, Poet arrival
+  'mode-haven': (ctx, vol) => {
+    createChord(ctx, [330, 220, 165, 110], 'sine', 0.08, 0.8, vol, ctx.currentTime)
+    // Warm sub presence
+    createOscillatorTone(ctx, 55, 'sine', 0.1, 1.0, vol * 0.3, ctx.currentTime + 0.1)
+  },
+
+  // ─── Protocol ZERO ────────────────────────────────────────────────────────
+  // Deep sub-bass impact — system stopping, world pausing
+  'protocol-zero': (ctx, vol) => {
+    createFrequencySweep(ctx, 80, 30, 'sine', 0.35, vol, ctx.currentTime)
+    // Noise burst — physical impact feeling
+    createNoiseBurst(ctx, 0.15, vol * 0.4, 'brown', ctx.currentTime)
+    // High click — precision
+    createOscillatorTone(ctx, 2000, 'sine', 0.005, 0.08, vol * 0.2, ctx.currentTime)
+  },
+
+  // ─── Navigation tap ──────────────────────────────────────────────────────
+  // Minimal click — spatial confirmation without announcing
+  'nav-tap': (ctx, vol) => {
+    createOscillatorTone(ctx, 600, 'sine', 0.004, 0.06, vol, ctx.currentTime)
+    createOscillatorTone(ctx, 1200, 'sine', 0.003, 0.04, vol * 0.3, ctx.currentTime)
+  },
+
+  // ─── Button press ─────────────────────────────────────────────────────────
+  // Slightly fuller than nav tap — more deliberate action
+  'button-press': (ctx, vol) => {
+    createOscillatorTone(ctx, 440, 'sine', 0.005, 0.1, vol, ctx.currentTime)
+    createNoiseBurst(ctx, 0.04, vol * 0.3, 'white', ctx.currentTime)
+  },
+
+  // ─── Modal open ───────────────────────────────────────────────────────────
+  // Rising sine — content arriving
+  'modal-open': (ctx, vol) => {
+    createFrequencySweep(ctx, 300, 500, 'sine', 0.15, vol, ctx.currentTime)
+  },
+
+  // ─── Modal close ──────────────────────────────────────────────────────────
+  // Falling sine — content departing
+  'modal-close': (ctx, vol) => {
+    createFrequencySweep(ctx, 500, 300, 'sine', 0.12, vol * 0.7, ctx.currentTime)
+  },
+
+  // ─── Journal save ─────────────────────────────────────────────────────────
+  // Two-tone confirmation — thought committed to record
+  // Deliberately satisfying — this is an important moment
+  'journal-save': (ctx, vol) => {
+    createOscillatorTone(ctx, 440, 'sine', 0.01, 0.2, vol, ctx.currentTime)
+    createOscillatorTone(ctx, 660, 'sine', 0.01, 0.25, vol * 0.7, ctx.currentTime + 0.08)
+    // Soft noise tail — paper rustling
+    createNoiseBurst(ctx, 0.3, vol * 0.15, 'brown', ctx.currentTime + 0.05)
+  },
+
+  // ─── Gym log ──────────────────────────────────────────────────────────────
+  // Percussive noise + low thud — physical, mechanical, weighted
+  'gym-log': (ctx, vol) => {
+    createOscillatorTone(ctx, 80, 'sine', 0.005, 0.2, vol, ctx.currentTime)
+    createNoiseBurst(ctx, 0.08, vol * 0.5, 'white', ctx.currentTime)
+    // Second impact — like weight returning to rack
+    createOscillatorTone(ctx, 60, 'sine', 0.003, 0.15, vol * 0.4, ctx.currentTime + 0.05)
+  },
+
+  // ─── Duel start ───────────────────────────────────────────────────────────
+  // Tension build — two ascending tones, combat initiated
+  'duel-start': (ctx, vol) => {
+    createFrequencySweep(ctx, 200, 400, 'sawtooth', 0.2, vol * 0.4, ctx.currentTime)
+    createFrequencySweep(ctx, 150, 300, 'sawtooth', 0.25, vol * 0.3, ctx.currentTime + 0.1)
+    // Filter noise for dramatic effect
+    const bufferSize = ctx.sampleRate * 0.3
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const data   = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1
+    const source = ctx.createBufferSource()
+    const filter = ctx.createBiquadFilter()
+    const gain   = ctx.createGain()
+    source.buffer = buffer
+    filter.type   = 'bandpass'
+    filter.frequency.value = 800
+    filter.Q.value         = 5
+    gain.gain.setValueAtTime(vol * 0.2, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3)
+    source.connect(filter)
+    filter.connect(gain)
+    connectToMaster(gain)
+    source.start(ctx.currentTime)
+  },
+
+  // ─── Duel win ─────────────────────────────────────────────────────────────
+  // Major arpeggio — victory, ascending intelligence
+  'duel-win': (ctx, vol) => {
+    const notes = [261.63, 329.63, 392.00, 523.25]  // C4 E4 G4 C5 — major chord
+    notes.forEach((freq, i) => {
+      createOscillatorTone(
+        ctx, freq, 'sine',
+        0.01, 0.3,
+        vol * (1 - i * 0.1),
+        ctx.currentTime + i * 0.07
+      )
+    })
+    // Signal shimmer at top
+    createOscillatorTone(ctx, 1046.5, 'sine', 0.005, 0.4, vol * 0.3, ctx.currentTime + 0.28)
+  },
+
+  // ─── Duel lose ────────────────────────────────────────────────────────────
+  // Descending minor — not harsh, just honest
+  'duel-lose': (ctx, vol) => {
+    const notes = [392.00, 311.13, 261.63]  // G4 Eb4 C4 — minor fall
+    notes.forEach((freq, i) => {
+      createOscillatorTone(
+        ctx, freq, 'sine',
+        0.01, 0.35,
+        vol * 0.7,
+        ctx.currentTime + i * 0.09
+      )
+    })
+  },
+
+  // ─── Oracle session open ──────────────────────────────────────────────────
+  // Slow breath — intelligence awakening, the system turning toward you
+  'oracle-start': (ctx, vol) => {
+    createFrequencySweep(ctx, 80, 160, 'sine', 0.6, vol * 0.5, ctx.currentTime)
+    createOscillatorTone(ctx, 320, 'sine', 0.2, 0.5, vol * 0.3, ctx.currentTime + 0.3)
+    // Harmonic shimmer
+    createOscillatorTone(ctx, 640, 'sine', 0.1, 0.6, vol * 0.1, ctx.currentTime + 0.4)
+  },
+
+  // ─── Word appear ──────────────────────────────────────────────────────────
+  // Ultra minimal — one per word as oracle text materializes
+  // Must be inaudible in isolation, textural in accumulation
+  'word-appear': (ctx, vol) => {
+    const freq = 800 + Math.random() * 400  // slight pitch variation per word
+    createOscillatorTone(ctx, freq, 'sine', 0.002, 0.04, vol, ctx.currentTime)
+  },
+
+  // ─── Streak milestone ─────────────────────────────────────────────────────
+  // Full chord + shimmer — rare, celebratory, earned
+  // Only fires at 7, 30, 100 day streaks
+  'streak-milestone': (ctx, vol) => {
+    // Base chord — rich, resonant
+    createChord(ctx, [130.81, 164.81, 196.00, 261.63], 'sine', 0.05, 1.0, vol, ctx.currentTime)
+    // Upper octave shimmer
+    createChord(ctx, [523.25, 659.25, 783.99], 'sine', 0.08, 0.8, vol * 0.5, ctx.currentTime + 0.1)
+    // Sub presence
+    createOscillatorTone(ctx, 65.41, 'sine', 0.1, 1.2, vol * 0.4, ctx.currentTime)
+    // Noise sparkle at top
+    createNoiseBurst(ctx, 0.5, vol * 0.15, 'white', ctx.currentTime + 0.15)
+  },
+}
+
+// ─── Ambient sound engine ─────────────────────────────────────────────────────
+
+let apexAmbientNodes:  AudioNode[] = []
+let havenAmbientNodes: AudioNode[] = []
+
 /**
- * Lexicon duel — word accepted / XP earned
- * Sharp confirmation — Commander approves
+ * Start APEX ambient — very low frequency hum, barely perceptible
+ * Engineered precision — like server room tone
  */
-export function playWordAccepted(): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
+function startApexAmbient(ctx: AudioContext): void {
+  if (!state.masterGain) return
 
-  const osc = audioCtx.createOscillator()
-  const gain = audioCtx.createGain()
+  // Low sine oscillator — 60Hz, like transformer hum
+  const osc  = ctx.createOscillator()
+  const gain = ctx.createGain()
+  const filter = ctx.createBiquadFilter()
 
-  osc.connect(gain)
-  gain.connect(masterGain)
+  osc.type           = 'sine'
+  osc.frequency.value = 60
 
-  osc.type = 'triangle'
-  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime)
-  osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.06)
+  filter.type            = 'lowpass'
+  filter.frequency.value = 120
 
-  applyEnvelope(gain, audioCtx, {
-    attack: 0.005,
-    sustain: 0.04,
-    release: 0.15,
-    peak: 0.12,
-  })
+  gain.gain.setValueAtTime(0, ctx.currentTime)
+  gain.gain.linearRampToValueAtTime(0.008, ctx.currentTime + 2.0)
 
-  osc.start(audioCtx.currentTime)
-  osc.stop(audioCtx.currentTime + 0.3)
+  osc.connect(filter)
+  filter.connect(gain)
+  if (state.masterGain) gain.connect(state.masterGain)
+
+  osc.start(ctx.currentTime)
+  apexAmbientNodes = [osc, gain, filter]
 }
 
 /**
- * Protocol ZERO — emergency brake engaged
- * Deep, resonant warning — system halting
+ * Start HAVEN ambient — warm low-frequency pad
+ * Gentle, resonant, like distant cello
+ */
+function startHavenAmbient(ctx: AudioContext): void {
+  if (!state.masterGain) return
+
+  const frequencies = [55, 82.5, 110]  // A1 E2 A2 — open fifth drone
+
+  frequencies.forEach((freq, i) => {
+    const osc    = ctx.createOscillator()
+    const gain   = ctx.createGain()
+    const filter = ctx.createBiquadFilter()
+
+    osc.type           = 'sine'
+    osc.frequency.value = freq
+
+    // Slow vibrato — alive feeling
+    const lfo        = ctx.createOscillator()
+    const lfoGain    = ctx.createGain()
+    lfo.frequency.value  = 0.3 + i * 0.07    // slight rate variation
+    lfoGain.gain.value   = 0.5               // vibrato depth in Hz
+
+    lfo.connect(lfoGain)
+    lfoGain.connect(osc.frequency)
+
+    filter.type            = 'lowpass'
+    filter.frequency.value = 300
+
+    const targetVol = 0.005 / (i + 1)
+    gain.gain.setValueAtTime(0, ctx.currentTime)
+    gain.gain.linearRampToValueAtTime(targetVol, ctx.currentTime + 3.0 + i * 0.5)
+
+    osc.connect(filter)
+    filter.connect(gain)
+    if (state.masterGain) gain.connect(state.masterGain)
+
+    osc.start(ctx.currentTime)
+    lfo.start(ctx.currentTime)
+
+    havenAmbientNodes.push(osc, gain, filter, lfo, lfoGain)
+  })
+}
+
+function stopAmbientNodes(nodes: AudioNode[], ctx: AudioContext): void {
+  nodes.forEach(node => {
+    try {
+      if (node instanceof OscillatorNode) {
+        node.stop(ctx.currentTime + 1.0)  // fade before stop
+      } else if (node instanceof GainNode) {
+        node.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.0)
+      }
+    } catch {/* already stopped */}
+  })
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Play a sound by ID.
+ * Must be called from a user gesture context on first call.
+ * Subsequent calls work without gesture.
+ */
+export function playSound(id: SoundId): void {
+  if (!isBrowser || state.muted) return
+
+  const ctx = getContext()
+  if (!ctx) return
+
+  const volume = VOLUMES[id] * state.volume
+
+  try {
+    SOUNDS[id](ctx, volume)
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[NEXUS Audio] Failed to play sound: ${id}`, err)
+    }
+  }
+}
+
+/**
+ * Play mode transition sound.
+ * Exported separately for ModeTransition component (Phase 2E).
+ */
+export function playModeTransition(mode: AudioMode): void {
+  playSound(mode === 'apex' ? 'mode-apex' : 'mode-haven')
+}
+
+/**
+ * Play Protocol ZERO sound.
+ * Exported separately for ProtocolZero component (Phase 2E).
  */
 export function playProtocolZero(): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
-
-  // Sub-bass drone
-  const sub = audioCtx.createOscillator()
-  const subGain = audioCtx.createGain()
-  sub.connect(subGain)
-  subGain.connect(masterGain)
-  sub.type = 'sine'
-  sub.frequency.setValueAtTime(55, audioCtx.currentTime)
-  sub.frequency.exponentialRampToValueAtTime(
-    27.5,
-    audioCtx.currentTime + 1.5
-  )
-
-  applyEnvelope(subGain, audioCtx, {
-    attack: 0.1,
-    sustain: 0.8,
-    release: 0.8,
-    peak: 0.3,
-  })
-
-  // High harmonic — tension
-  const high = audioCtx.createOscillator()
-  const highGain = audioCtx.createGain()
-  high.connect(highGain)
-  highGain.connect(masterGain)
-  high.type = 'sawtooth'
-  high.frequency.setValueAtTime(440, audioCtx.currentTime)
-  high.frequency.exponentialRampToValueAtTime(
-    110,
-    audioCtx.currentTime + 1.5
-  )
-
-  applyEnvelope(highGain, audioCtx, {
-    attack: 0.05,
-    sustain: 0.5,
-    release: 1.0,
-    peak: 0.06,
-  })
-
-  sub.start(audioCtx.currentTime)
-  sub.stop(audioCtx.currentTime + 2.0)
-  high.start(audioCtx.currentTime)
-  high.stop(audioCtx.currentTime + 2.0)
+  playSound('protocol-zero')
 }
 
 /**
- * Journal save — quiet acknowledgment
- * Entry committed to memory
+ * Start ambient sound layer for current mode.
+ * Optional — requires user to have enabled ambient audio.
  */
-export function playJournalSave(mode: Mode = 'haven'): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
+export function startAmbient(mode: AudioMode): void {
+  if (!isBrowser || !state.ambientActive) return
 
-  const osc = audioCtx.createOscillator()
-  const gain = audioCtx.createGain()
+  const ctx = getContext()
+  if (!ctx) return
 
-  osc.connect(gain)
-  gain.connect(masterGain)
+  stopAmbient()
 
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(
-    mode === 'haven' ? 392.0 : 523.25,
-    audioCtx.currentTime
-  )
-
-  applyEnvelope(gain, audioCtx, {
-    attack: mode === 'haven' ? 0.04 : 0.01,
-    sustain: 0.05,
-    release: mode === 'haven' ? 0.5 : 0.2,
-    peak: 0.08,
-  })
-
-  osc.start(audioCtx.currentTime)
-  osc.stop(audioCtx.currentTime + 0.7)
+  try {
+    if (mode === 'apex') startApexAmbient(ctx)
+    else                  startHavenAmbient(ctx)
+  } catch {/* silent */}
 }
 
-// ─── Volume Control ───────────────────────────────────
-
 /**
- * Set master volume — 0.0 to 1.0
- * Called from Settings page
+ * Stop all ambient audio immediately with fade.
  */
-export function setMasterVolume(volume: number): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
+export function stopAmbient(): void {
+  if (!isBrowser) return
 
-  const clamped = Math.max(0, Math.min(1, volume))
-  masterGain.gain.linearRampToValueAtTime(
-    clamped * 0.4,
-    audioCtx.currentTime + 0.1
-  )
+  const ctx = state.context
+  if (!ctx) return
+
+  stopAmbientNodes(apexAmbientNodes,  ctx)
+  stopAmbientNodes(havenAmbientNodes, ctx)
+
+  apexAmbientNodes  = []
+  havenAmbientNodes = []
 }
 
 /**
- * Mute / unmute master output
+ * Set master volume — 0 to 1.
  */
-export function setMuted(muted: boolean): void {
-  const audioCtx = getContext()
-  if (!audioCtx || !masterGain) return
-
-  masterGain.gain.linearRampToValueAtTime(
-    muted ? 0 : 0.4,
-    audioCtx.currentTime + 0.05
-  )
+export function setVolume(volume: number): void {
+  state.volume = Math.max(0, Math.min(1, volume))
+  if (state.masterGain && !state.muted) {
+    state.masterGain.gain.setTargetAtTime(state.volume, state.context!.currentTime, 0.1)
+  }
 }
 
 /**
- * Initialize audio context on first user gesture.
- * Call this in an onClick handler anywhere in the app.
- * Safe to call multiple times — idempotent.
+ * Mute all audio instantly.
+ */
+export function mute(): void {
+  state.muted = true
+  if (state.masterGain && state.context) {
+    state.masterGain.gain.setTargetAtTime(0, state.context.currentTime, 0.05)
+  }
+}
+
+/**
+ * Unmute — restore to previous volume.
+ */
+export function unmute(): void {
+  state.muted = false
+  if (state.masterGain && state.context) {
+    state.masterGain.gain.setTargetAtTime(state.volume, state.context.currentTime, 0.1)
+  }
+}
+
+/**
+ * Enable or disable ambient audio layer.
+ */
+export function setAmbientEnabled(enabled: boolean, mode?: AudioMode): void {
+  state.ambientActive = enabled
+  if (enabled && mode) startAmbient(mode)
+  else stopAmbient()
+}
+
+/**
+ * Get current audio engine state — for settings UI.
+ */
+export function getAudioState(): {
+  muted:         boolean
+  volume:        number
+  ambientActive: boolean
+  contextState:  AudioContextState | 'uninitialized'
+} {
+  return {
+    muted:        state.muted,
+    volume:       state.volume,
+    ambientActive: state.ambientActive,
+    contextState: state.context?.state ?? 'uninitialized',
+  }
+}
+
+/**
+ * Initialize audio engine on first user interaction.
+ * Call this from a click handler to unblock AudioContext.
+ * Subsequent playSound calls work without calling this.
  */
 export function initAudio(): void {
   getContext()
 }
 
-// ─── Type exports ─────────────────────────────────────
-export type AudioEngine = {
-  playClick: typeof playClick
-  playModeTransition: typeof playModeTransition
-  playOracleActivate: typeof playOracleActivate
-  playStreakMilestone: typeof playStreakMilestone
-  playWordAccepted: typeof playWordAccepted
-  playProtocolZero: typeof playProtocolZero
-  playJournalSave: typeof playJournalSave
-  setMasterVolume: typeof setMasterVolume
-  setMuted: typeof setMuted
-  initAudio: typeof initAudio
+/**
+ * Persist audio preferences to localStorage.
+ */
+export function persistAudioPreferences(): void {
+  if (!isBrowser) return
+  try {
+    localStorage.setItem('nexus:audio', JSON.stringify({
+      muted:         state.muted,
+      volume:        state.volume,
+      ambientActive: state.ambientActive,
+    }))
+  } catch {/* silent */}
+}
+
+/**
+ * Load audio preferences from localStorage.
+ */
+export function loadAudioPreferences(): void {
+  if (!isBrowser) return
+  try {
+    const stored = localStorage.getItem('nexus:audio')
+    if (!stored) return
+    const prefs = JSON.parse(stored) as {
+      muted?:         boolean
+      volume?:        number
+      ambientActive?: boolean
+    }
+    if (typeof prefs.muted   === 'boolean') state.muted   = prefs.muted
+    if (typeof prefs.volume  === 'number')  state.volume  = prefs.volume
+    if (typeof prefs.ambientActive === 'boolean') state.ambientActive = prefs.ambientActive
+  } catch {/* silent */}
 }
