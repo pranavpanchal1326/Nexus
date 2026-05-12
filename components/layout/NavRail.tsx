@@ -13,7 +13,7 @@ import {
   Settings,
   User
 } from 'lucide-react'
-import { SignalDot } from '@/components/ui/SignalDot'
+import { SignalDotNav } from '@/components/ui/SignalDot'
 import { useNexusStore } from '@/store/nexusStore'
 import { useAudioEvents } from '@/hooks/useAudio'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -108,7 +108,7 @@ export function NavRail({ user, profile }: NavRailProps): React.JSX.Element {
         </div>
 
         <div className="nav-rail__bottom">
-          <SignalDot />
+          <SignalDotNav />
         </div>
       </nav>
 

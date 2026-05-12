@@ -1,10 +1,12 @@
 'use client'
 
 import { useNexusStore } from '@/store/nexusStore'
-import { SignalDot } from '@/components/ui/SignalDot'
+import { SignalDotLarge } from '@/components/ui/SignalDot'
 import { useTimeMode, type PreferredMode } from '@/hooks/useTimeMode'
 import { useStats } from '@/hooks/useStats'
 import { relativeTime } from '@/lib/utils'
+import { PanelAmbientIntel } from '@/components/modules/AmbientIntel'
+import { useDashboardAmbient } from '@/hooks/useAmbientAI'
 
 interface IntelPanelProps {
   userId:        string
@@ -15,6 +17,7 @@ export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Elemen
   const isIntelPanelOpen = useNexusStore(state => state.isIntelPanelOpen)
   const { mode, windowLabel, isHydrated } = useTimeMode(preferredMode)
   const { data: stats, isLoading } = useStats()
+  const { insight } = useDashboardAmbient(stats)
 
   const activities = stats?.recent_activity ?? []
 
@@ -23,7 +26,7 @@ export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Elemen
       {/* Panel Header */}
       <header className="intel-header">
         <span className="intel-title">INTEL</span>
-        <SignalDot />
+        <SignalDotLarge />
       </header>
 
       {/* Mode Indicator Block */}
@@ -73,9 +76,7 @@ export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Elemen
 
       {/* Ambient AI Whisper */}
       <div className="intel-whisper">
-        <div className="intel-whisper-content">
-          {/* AmbientIntel component will mount here in Phase 2G */}
-        </div>
+        <PanelAmbientIntel insight={insight} />
       </div>
 
       <style jsx>{`

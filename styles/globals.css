@@ -1741,3 +1741,46 @@ a:focus:not(:focus-visible),
 
 .scroll-area__fade--top    { top:    0; }
 .scroll-area__fade--bottom { bottom: 0; }
+
+/* ─── AmbientIntel ───────────────────────────────────────────── */
+.ambient-intel {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  pointer-events: none;
+  user-select:    none;
+}
+.ambient-intel__dot {
+  display:          flex-shrink 0;
+  flex-shrink:      0;
+  width:            4px;
+  height:           4px;
+  border-radius:    50%;
+  background:       var(--color-signal);
+  opacity:          0.6;
+}
+.ambient-intel__text {
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  letter-spacing: 0.02em;
+  color:          var(--color-text-secondary);
+  opacity:        0.7;
+  line-height:    1.4;
+}
+.ambient-intel--inline {
+  margin-top: 12px;
+  padding:    0;
+}
+.ambient-intel--block {
+  margin-top: 16px;
+  padding:    8px 0;
+}
+.ambient-intel--beside {
+  display:        inline-flex;
+  margin-left:    16px;
+  vertical-align: middle;
+}
+.intel-panel__whisper .ambient-intel__text {
+  font-size:   12px;
+  line-height: 1.5;
+}

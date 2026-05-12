@@ -4,8 +4,9 @@ const SceneWrapper = dynamic(
   { ssr: false }
 )
 
-import { Tesseract }    from '@/components/three/Tesseract'
-import { AuroraField }  from '@/components/three/AuroraField'
+import { Tesseract }       from '@/components/three/Tesseract'
+import { AuroraField }     from '@/components/three/AuroraField'
+import { DashboardClient } from './DashboardClient'
 
 export default function DashboardPage(): React.JSX.Element {
   return (
@@ -33,9 +34,7 @@ export default function DashboardPage(): React.JSX.Element {
         </SceneWrapper>
       </div>
 
-      <section className="dashboard-stats-zone">
-        {/* Placeholder — Phase 6A wires real data here */}
-      </section>
+      <DashboardClient />
 
     </div>
   )
