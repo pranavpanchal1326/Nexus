@@ -2,6 +2,7 @@
 import { useCallback, useRef } from 'react'
 import { useNexusStore } from '@/store/nexusStore'
 import { playSound } from '@/lib/audio'
+import { consumeStream } from '@/lib/stream'
 import type { ChatRequest, AmbientRequest } from '@/types/api'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -41,54 +42,50 @@ export function useGroq(options: UseGroqOptions = {}): GroqStreamResult {
 
     isLoadingRef.current = true
     abortRef.current     = new AbortController()
-
     signalStart()
 
     try {
       const res = await fetch('/api/chat', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(params),
-        signal:  abortRef.current.signal,
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify(params),
+        signal:      abortRef.current.signal,
         credentials: 'include',
       })
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Request failed' }))
-        throw new Error(errorData.error ?? `HTTP ${res.status}`)
+        options.onError?.(errorData.error ?? `HTTP ${res.status}`)
+        return
       }
 
-      if (!res.body) throw new Error('No response body')
-
-      // ─── Stream reading ────────────────────────────────────────────────
-      const reader   = res.body.getReader()
-      const decoder  = new TextDecoder()
-      let   fullText = ''
-
-      // Play word-appear sound periodically during stream
       let wordCount = 0
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value, { stream: true })
-        fullText   += chunk
-
-        // Count approximate words for sound timing
-        const newWords = chunk.split(/\s+/).filter(Boolean).length
-        wordCount     += newWords
-
-        // Play word-appear sound every ~3 words — textural accumulation
-        if (wordCount >= 3) {
-          playSound('word-appear')
-          wordCount = 0
-        }
-
-        options.onChunk?.(chunk)
-      }
-
-      options.onComplete?.(fullText)
+      await consumeStream(
+        res,
+        {
+          onChunk: (chunk) => {
+            // Play word-appear sound every ~3 words — textural accumulation
+            const newWords = chunk.split(/\s+/).filter(Boolean).length
+            wordCount += newWords
+            if (wordCount >= 3) {
+              playSound('word-appear')
+              wordCount = 0
+            }
+            options.onChunk?.(chunk)
+          },
+          onComplete: (fullText) => {
+            options.onComplete?.(fullText)
+          },
+          onError: (error) => {
+            options.onError?.(error)
+          },
+          onAbort: () => {
+            // Silent — user intentionally cancelled
+          },
+        },
+        abortRef.current.signal
+      )
 
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return
@@ -109,9 +106,9 @@ export function useGroq(options: UseGroqOptions = {}): GroqStreamResult {
 
     try {
       const res = await fetch('/api/chat/ambient', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(params),
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify(params),
         credentials: 'include',
       })
 

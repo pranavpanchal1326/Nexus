@@ -191,7 +191,20 @@ export type Database = {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      recalculate_streak: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
+      increment_duel_stat: {
+        Args: { p_user_id: string; p_xp: number }
+        Returns: void
+      }
+      calculate_streak: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
+    }
     Enums: Record<string, never>
   }
 }
