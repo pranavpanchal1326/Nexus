@@ -42,7 +42,10 @@ export function useGroq(options: UseGroqOptions = {}): GroqStreamResult {
 
     isLoadingRef.current = true
     abortRef.current     = new AbortController()
+    
+    let signalWasStarted = false
     signalStart()
+    signalWasStarted = true
 
     try {
       const res = await fetch('/api/chat', {
@@ -93,7 +96,9 @@ export function useGroq(options: UseGroqOptions = {}): GroqStreamResult {
       options.onError?.(message)
     } finally {
       isLoadingRef.current = false
-      signalStop()
+      if (signalWasStarted) {
+        signalStop()
+      }
     }
   }, [signalStart, signalStop, options])
 
