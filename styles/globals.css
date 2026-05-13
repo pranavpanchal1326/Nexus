@@ -1784,3 +1784,281 @@ a:focus:not(:focus-visible),
   font-size:   12px;
   line-height: 1.5;
 }
+
+/* ─── Journal Editor ─────────────────────────────────────────── */
+
+.journal-editor {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+  max-width:      720px;
+}
+
+.journal-editor__header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  height:          36px;
+}
+
+.journal-editor__header-left {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.journal-editor__header-right {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.journal-saved-indicator {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          var(--color-success);
+}
+
+.journal-word-count {
+  font-family: var(--font-mono);
+  font-size:   11px;
+  color:       var(--color-text-disabled);
+}
+
+.journal-save-btn {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--color-signal);
+  background:     none;
+  border:         1px solid rgba(232,255,71,0.3);
+  border-radius:  6px;
+  padding:        5px 12px;
+  cursor:         pointer;
+  transition:     background 150ms ease, border-color 150ms ease;
+}
+
+.journal-save-btn:hover:not(.journal-save-btn--disabled) {
+  background:   rgba(232,255,71,0.06);
+  border-color: rgba(232,255,71,0.6);
+}
+
+.journal-save-btn--disabled {
+  opacity: 0.3;
+  cursor:  not-allowed;
+}
+
+/* ─── Listening indicator ────────────────────────────────────── */
+
+.journal-listening-indicator {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  height:      20px;
+}
+
+.journal-listening-dot {
+  width:         4px;
+  height:        4px;
+  border-radius: 50%;
+  background:    var(--color-signal);
+  animation:     oracle-dot-pulse 1.2s ease-in-out infinite;
+  flex-shrink:   0;
+}
+
+.journal-listening-label {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          var(--color-signal);
+  opacity:        0.7;
+}
+
+/* ─── Textarea ───────────────────────────────────────────────── */
+
+.journal-editor__body {
+  position: relative;
+}
+
+.journal-textarea {
+  width:       100%;
+  min-height:  320px;
+  background:  transparent;
+  border:      none;
+  outline:     none;
+  resize:      none;
+  line-height: 1.7;
+  padding:     0;
+  overflow:    hidden;
+}
+
+/* APEX: monospace — precise, structured */
+.journal-textarea--apex {
+  font-family:    var(--font-mono);
+  font-size:      14px;
+  color:          var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+
+/* HAVEN: serif — warm, flowing */
+.journal-textarea--haven {
+  font-family:    var(--font-serif);
+  font-size:      18px;
+  font-style:     italic;
+  color:          var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.journal-textarea::placeholder {
+  color:      var(--color-text-disabled);
+  font-style: italic;
+}
+
+/* No animation on textarea — ever */
+.journal-textarea,
+.journal-textarea:focus { animation: none !important; }
+
+/* ─── Journal hints ──────────────────────────────────────────── */
+
+.journal-hints {
+  display:     flex;
+  gap:         16px;
+  padding-top: 4px;
+}
+
+.journal-hints span {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.08em;
+  color:          var(--color-text-disabled);
+}
+
+.journal-error {
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  color:          var(--color-error);
+  letter-spacing: 0.02em;
+}
+
+/* ─── Journal entry card ─────────────────────────────────────── */
+
+.journal-entry-card {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.journal-entry__header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+}
+
+.journal-entry__meta {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+}
+
+.journal-entry__words,
+.journal-entry__date {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  color:          var(--color-text-disabled);
+  letter-spacing: 0.04em;
+}
+
+.journal-entry__content {
+  line-height: 1.65;
+  color:       var(--color-text-secondary);
+}
+
+.journal-entry__content--apex {
+  font-family: var(--font-mono);
+  font-size:   13px;
+}
+
+.journal-entry__content--haven {
+  font-family:    var(--font-serif);
+  font-size:      15px;
+  font-style:     italic;
+  letter-spacing: -0.01em;
+}
+
+.journal-entry__expand {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--color-text-disabled);
+  background:     none;
+  border:         none;
+  cursor:         pointer;
+  padding:        0;
+  align-self:     flex-start;
+  transition:     color 150ms ease;
+}
+
+.journal-entry__expand:hover {
+  color: var(--color-text-secondary);
+}
+
+.journal-entry__insight {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding-top: 4px;
+  border-top:  1px solid var(--color-border-subtle);
+}
+
+.journal-entry__insight-dot {
+  width:         4px;
+  height:        4px;
+  border-radius: 50%;
+  background:    var(--color-signal);
+  opacity:       0.5;
+  flex-shrink:   0;
+}
+
+.journal-entry__insight-text {
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  color:          var(--color-text-disabled);
+  font-style:     italic;
+  line-height:    1.4;
+}
+
+/* ─── Journal list ───────────────────────────────────────────── */
+
+.journal-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.journal-history {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+  max-width:      720px;
+}
+
+.journal-history__title {
+  color:          var(--color-text-disabled);
+}
+
+.journal-divider {
+  max-width: 720px;
+  margin:    8px 0;
+}
+
+.journal-list-error {
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  color:          var(--color-error);
+  padding:        16px 0;
+}
