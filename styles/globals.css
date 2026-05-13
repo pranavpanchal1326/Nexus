@@ -2062,3 +2062,441 @@ a:focus:not(:focus-visible),
   color:          var(--color-error);
   padding:        16px 0;
 }
+/* ─── Gym Tracker ────────────────────────────────────────────── */
+
+.gym-tracker {
+  display:        flex;
+  flex-direction: column;
+  gap:            20px;
+  max-width:      640px;
+}
+
+.gym-tracker__header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  height:          32px;
+}
+
+.gym-tracker__title {
+  color: var(--color-text-disabled);
+}
+
+/* ─── Gym Form ───────────────────────────────────────────────── */
+
+.gym-form {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.gym-form__exercise-wrapper {
+  position: relative;
+}
+
+.gym-input {
+  background:    #0D0D0D;
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family:   var(--font-mono);
+  font-size:     13px;
+  color:         var(--color-text-primary);
+  outline:       none;
+  transition:    border-color 200ms ease;
+}
+
+.gym-input:focus {
+  border-color: rgba(232,255,71,0.3);
+}
+
+.gym-input--exercise {
+  width:   100%;
+  height:  44px;
+  padding: 0 14px;
+}
+
+.gym-input--number {
+  width:       72px;
+  height:      44px;
+  padding:     0 12px;
+  text-align:  center;
+}
+
+.gym-input--weight {
+  width:       80px;
+  height:      44px;
+  padding:     0 12px;
+  text-align:  center;
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+/* No animation on inputs — design law */
+.gym-input,
+.gym-input:focus { animation: none !important; }
+
+/* ─── Autocomplete ───────────────────────────────────────────── */
+
+.gym-autocomplete {
+  position:      absolute;
+  top:           calc(100% + 4px);
+  left:          0;
+  right:         0;
+  background:    var(--color-surface-raised);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow:      hidden;
+  z-index:       var(--z-raised);
+  box-shadow:    0 8px 24px rgba(0,0,0,0.4);
+}
+
+.gym-autocomplete__item {
+  display:        block;
+  width:          100%;
+  padding:        10px 14px;
+  font-family:    var(--font-mono);
+  font-size:      12px;
+  color:          var(--color-text-secondary);
+  background:     none;
+  border:         none;
+  text-align:     left;
+  cursor:         pointer;
+  border-bottom:  1px solid var(--color-border-subtle);
+  transition:     background 100ms ease, color 100ms ease;
+}
+
+.gym-autocomplete__item:last-child {
+  border-bottom: none;
+}
+
+.gym-autocomplete__item:hover {
+  background: var(--color-surface);
+  color:      var(--color-text-primary);
+}
+
+/* ─── Numbers row ────────────────────────────────────────────── */
+
+.gym-form__numbers {
+  display:     flex;
+  align-items: flex-end;
+  gap:         8px;
+}
+
+.gym-form__field {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+.gym-form__field--weight {
+  flex: 1;
+}
+
+.gym-form__label {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--color-text-disabled);
+}
+
+.gym-form__times {
+  font-family:   var(--font-mono);
+  font-size:     16px;
+  color:         var(--color-text-disabled);
+  margin-bottom: 10px;
+  flex-shrink:   0;
+}
+
+/* ─── Weight + unit ──────────────────────────────────────────── */
+
+.gym-weight-input {
+  display:     flex;
+  align-items: stretch;
+}
+
+.gym-unit-toggle {
+  height:        44px;
+  padding:       0 10px;
+  font-family:   var(--font-mono);
+  font-size:     10px;
+  letter-spacing: 0.08em;
+  color:         var(--color-text-disabled);
+  background:    var(--color-surface-raised);
+  border:        1px solid var(--color-border);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  cursor:        pointer;
+  transition:    color 150ms ease;
+  white-space:   nowrap;
+}
+
+.gym-unit-toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+/* ─── Form actions ───────────────────────────────────────────── */
+
+.gym-form__actions {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.gym-notes-toggle {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color:          var(--color-text-disabled);
+  background:     none;
+  border:         none;
+  cursor:         pointer;
+  padding:        0;
+  transition:     color 150ms ease;
+}
+
+.gym-notes-toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+.gym-submit {
+  margin-left:    auto;
+  height:         40px;
+  padding:        0 20px;
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--color-signal);
+  background:     none;
+  border:         1px solid rgba(232,255,71,0.4);
+  border-radius:  var(--radius-md);
+  cursor:         pointer;
+  transition:     background 150ms ease, border-color 150ms ease;
+}
+
+.gym-submit:hover:not(.gym-submit--disabled) {
+  background:   rgba(232,255,71,0.06);
+  border-color: rgba(232,255,71,0.7);
+}
+
+.gym-submit--disabled {
+  opacity: 0.3;
+  cursor:  not-allowed;
+}
+
+.gym-notes-field {
+  width:         100%;
+  min-height:    64px;
+  background:    #0D0D0D;
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family:   var(--font-mono);
+  font-size:     12px;
+  color:         var(--color-text-primary);
+  padding:       10px 14px;
+  resize:        none;
+  outline:       none;
+  overflow:      hidden;
+  transition:    border-color 200ms ease;
+}
+
+.gym-notes-field:focus {
+  border-color: rgba(232,255,71,0.3);
+}
+
+.gym-notes-field,
+.gym-notes-field:focus { animation: none !important; }
+
+/* ─── Session sets ───────────────────────────────────────────── */
+
+.gym-session {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.gym-session__title {
+  color: var(--color-text-disabled);
+}
+
+.gym-session__list {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.gym-set-row {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  padding:        10px 14px;
+  background:     var(--color-surface);
+  border:         1px solid var(--color-border);
+  border-radius:  var(--radius-md);
+}
+
+.gym-set-row__main {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+}
+
+.gym-set-row__exercise {
+  font-family: var(--font-mono);
+  font-size:   13px;
+  color:       var(--color-text-primary);
+  flex:        1;
+}
+
+.gym-set-row__numbers {
+  font-family: var(--font-mono);
+  font-size:   12px;
+  color:       var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.gym-set-row__delta {
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  letter-spacing: 0.02em;
+  white-space:    nowrap;
+  flex-shrink:    0;
+}
+
+.gym-set-row__insight {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  padding-top: 4px;
+}
+
+.gym-set-row__insight-dot {
+  width:         3px;
+  height:        3px;
+  border-radius: 50%;
+  background:    var(--color-signal);
+  opacity:       0.5;
+  flex-shrink:   0;
+}
+
+.gym-set-row__insight-text {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  color:          var(--color-text-disabled);
+  font-style:     italic;
+}
+
+/* ─── Gym History ────────────────────────────────────────────── */
+
+.gym-history {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+  max-width:      640px;
+}
+
+.gym-history__filters {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       6px;
+}
+
+.gym-filter-pill {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--color-text-disabled);
+  background:     none;
+  border:         1px solid var(--color-border);
+  border-radius:  var(--radius-pill);
+  padding:        4px 10px;
+  cursor:         pointer;
+  transition:     background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.gym-filter-pill:hover {
+  color:        var(--color-text-secondary);
+  border-color: #262626;
+}
+
+.gym-filter-pill--active {
+  color:        var(--color-text-primary);
+  border-color: rgba(232,255,71,0.4);
+  background:   rgba(232,255,71,0.04);
+}
+
+.gym-history__list {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.gym-history-entry {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.gym-history-entry__row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             12px;
+}
+
+.gym-history-entry__exercise {
+  font-family: var(--font-mono);
+  font-size:   13px;
+  color:       var(--color-text-primary);
+  flex:        1;
+}
+
+.gym-history-entry__numbers {
+  font-family: var(--font-mono);
+  font-size:   12px;
+  color:       var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.gym-history-entry__meta {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+}
+
+.gym-history-entry__date {
+  font-family: var(--font-mono);
+  font-size:   10px;
+  color:       var(--color-text-disabled);
+}
+
+.gym-history-entry__delta {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  letter-spacing: 0.02em;
+}
+
+.gym-history-entry__notes {
+  font-family:    var(--font-mono);
+  font-size:      11px;
+  color:          var(--color-text-disabled);
+  font-style:     italic;
+}
+
+.gym-divider,
+.gym-history-section {
+  max-width: 640px;
+}
+
+.gym-history-section {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+}
+
+.gym-history-section__title {
+  color: var(--color-text-disabled);
+}
+
