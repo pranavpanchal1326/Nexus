@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNexusStore }            from '@/store/nexusStore'
-import { useLexiconWords, useEvaluateDuel } from '@/hooks/useLexicon'
+import { useEvaluateDuel, useWordsDueForPractice } from '@/hooks/useLexicon'
 import { useLexiconAmbient }        from '@/hooks/useAmbientAI'
 import { buildLexiconContext }       from '@/lib/contextBuilders'
 import { OdometerNumber } from '@/components/ui'
@@ -256,16 +256,8 @@ function DuelWordSelector({
 }: {
   onSelect: (word: LexiconWord) => void
 }) {
-  const { data, isLoading } = useLexiconWords(50)
-  const words = data?.words ?? []
-
-  // Sort by least recently used — surfaces words that need practice
-  const sortedWords = [...words].sort((a, b) => {
-    if (!a.last_used_at && !b.last_used_at) return 0
-    if (!a.last_used_at) return -1
-    if (!b.last_used_at) return 1
-    return new Date(a.last_used_at).getTime() - new Date(b.last_used_at).getTime()
-  })
+  const words = useWordsDueForPractice(12)
+  const isLoading = words.length === 0
 
   if (isLoading) {
     return (
@@ -292,7 +284,7 @@ function DuelWordSelector({
         SELECT A WORD TO DUEL
       </span>
       <div className="duel-word-grid">
-        {sortedWords.slice(0, 12).map(word => (
+        {words.map(word => (
           <motion.button
             key={word.id}
             className="duel-word-chip"

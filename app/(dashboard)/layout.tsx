@@ -7,6 +7,7 @@ import { DynamicIsland } from '@/components/layout/DynamicIsland'
 import { ModeTransition } from '@/components/layout/ModeTransition'
 import { ProtocolZero } from '@/components/layout/ProtocolZero'
 import { DashboardShortcuts } from '@/components/layout/DashboardShortcuts'
+import { DataErrorBoundary } from '@/components/providers/ErrorBoundary'
 import type { Profile } from '@/types/database'
 import type { PreferredMode } from '@/hooks/useTimeMode'
 
@@ -41,7 +42,9 @@ export default async function DashboardLayout({
       <div className="dashboard-grid">
         <NavRail user={user} profile={profile as Profile | null} />
         <main className="dashboard-main scroll-void">
-          {children}
+          <DataErrorBoundary module="generic">
+            {children}
+          </DataErrorBoundary>
         </main>
         <IntelPanel 
           userId={user.id} 

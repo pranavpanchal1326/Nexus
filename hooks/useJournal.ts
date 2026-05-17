@@ -1,10 +1,15 @@
 'use client'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNexusStore }                          from '@/store/nexusStore'
-import { dispatchIslandEvent }                    from '@/lib/islandEvents'
-import { playSound }                              from '@/lib/audio'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  type InfiniteData,
+} from '@tanstack/react-query'
+import { useNexusStore } from '@/store/nexusStore'
+import { dispatchIslandEvent } from '@/lib/islandEvents'
+import { playSound } from '@/lib/audio'
+import { useInvalidateStats } from './useInvalidation'
 
 export interface JournalEntry {
   id:         string
@@ -15,36 +20,90 @@ export interface JournalEntry {
   created_at: string
 }
 
-interface JournalListResponse {
+export interface JournalListPage {
   entries: JournalEntry[]
   total:   number
   offset:  number
   limit:   number
+  hasMore: boolean
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+const JOURNAL_PAGE_SIZE = 20
 
-export function useJournalList(limit = 20) {
-  return useQuery<JournalListResponse>({
-    queryKey:    ['journal', 'list', limit],
-    queryFn:     async () => {
+export const journalKeys = {
+  all:      ['journal'] as const,
+  lists:    () => [...journalKeys.all, 'list'] as const,
+  list:     (filters: { mode?: string }) =>
+    [...journalKeys.lists(), filters] as const,
+  infinite: (filters: { mode?: string }) =>
+    [...journalKeys.all, 'infinite', filters] as const,
+  entry:    (id: string) => [...journalKeys.all, 'entry', id] as const,
+}
+
+export function useJournalList(limit = JOURNAL_PAGE_SIZE) {
+  return useQuery<JournalListPage>({
+    queryKey:   journalKeys.list({}),
+    queryFn:    async () => {
       const res = await fetch(
         `/api/journal?limit=${limit}&offset=0`,
         { credentials: 'include' }
       )
-      if (!res.ok) throw new Error('Failed to fetch journal entries')
-      return res.json()
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Fetch failed' }))
+        throw new Error(err.error ?? `HTTP ${res.status}`)
+      }
+      const data = await res.json()
+      return {
+        ...data,
+        hasMore: data.entries.length === limit,
+      }
     },
-    staleTime:   2 * 60 * 1000,
-    retry:       2,
+    staleTime:  2 * 60 * 1000,
+    retry:      2,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10_000),
   })
 }
 
-// ─── Mutations ────────────────────────────────────────────────────────────────
+export function useInfiniteJournal(mode?: 'apex' | 'haven') {
+  return useInfiniteQuery<JournalListPage>({
+    queryKey:    journalKeys.infinite({ mode }),
+    queryFn:     async ({ pageParam = 0 }) => {
+      const params = new URLSearchParams({
+        limit:  String(JOURNAL_PAGE_SIZE),
+        offset: String(pageParam as number),
+      })
+      if (mode) params.set('mode', mode)
+
+      const res = await fetch(`/api/journal?${params}`, { credentials: 'include' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      const data = await res.json()
+      return {
+        ...data,
+        hasMore: data.entries.length === JOURNAL_PAGE_SIZE,
+      }
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore
+        ? allPages.length * JOURNAL_PAGE_SIZE
+        : undefined,
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+export function useAllJournalEntries(mode?: 'apex' | 'haven') {
+  const { data, ...rest } = useInfiniteJournal(mode)
+  const entries = (data as InfiniteData<JournalListPage> | undefined)
+    ?.pages
+    .flatMap(page => page.entries) ?? []
+  return { entries, ...rest }
+}
 
 export function useCreateJournalEntry() {
   const queryClient = useQueryClient()
-  const mode        = useNexusStore(state => state.mode)
+  const mode = useNexusStore(state => state.mode)
+  const invalidateStats = useInvalidateStats()
 
   return useMutation({
     mutationFn: async (content: string) => {
@@ -62,49 +121,85 @@ export function useCreateJournalEntry() {
       return data.entry
     },
 
-    // Optimistic update — entry appears immediately in list
     onMutate: async (content: string) => {
-      await queryClient.cancelQueries({ queryKey: ['journal', 'list'] })
+      await queryClient.cancelQueries({ queryKey: journalKeys.lists() })
 
-      const prev = queryClient.getQueryData<JournalListResponse>(
-        ['journal', 'list', 20]
+      const previousList = queryClient.getQueryData<JournalListPage>(
+        journalKeys.list({})
       )
 
       const optimistic: JournalEntry = {
-        id:         `optimistic-${Date.now()}`,
+        id:         `optimistic-${crypto.randomUUID()}`,
         content,
         mode,
-        word_count: content.split(/\s+/).filter(Boolean).length,
+        word_count: content.trim().split(/\s+/).filter(Boolean).length,
         ai_insight: null,
         created_at: new Date().toISOString(),
       }
 
-      queryClient.setQueryData<JournalListResponse>(
-        ['journal', 'list', 20],
+      queryClient.setQueryData<JournalListPage>(
+        journalKeys.list({}),
         old => old
-          ? { ...old, entries: [optimistic, ...old.entries] }
-          : { entries: [optimistic], total: 1, offset: 0, limit: 20 }
+          ? {
+              ...old,
+              entries: [optimistic, ...old.entries],
+              total:   old.total + 1,
+            }
+          : {
+              entries: [optimistic],
+              total:   1,
+              offset:  0,
+              limit:   JOURNAL_PAGE_SIZE,
+              hasMore: false,
+            }
       )
 
-      return { prev }
+      return { previousList, optimisticId: optimistic.id }
     },
 
-    onSuccess: (entry) => {
-      // Replace optimistic entry with real entry
-      queryClient.invalidateQueries({ queryKey: ['journal', 'list'] })
-      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    onSuccess: (entry, __, context) => {
+      queryClient.setQueryData<JournalListPage>(
+        journalKeys.list({}),
+        old => {
+          if (!old) return old
+          return {
+            ...old,
+            entries: old.entries.map(e =>
+              e.id === context?.optimisticId ? entry : e
+            ),
+          }
+        }
+      )
 
-      // Sound + island notification
+      queryClient.invalidateQueries({ queryKey: journalKeys.infinite({}) })
+      invalidateStats()
+
       playSound('journal-save')
-      const wordCount = entry.word_count
-      dispatchIslandEvent('journal', `JOURNAL SAVED — ${wordCount} WORDS`)
+      dispatchIslandEvent('journal', `JOURNAL SAVED — ${entry.word_count} WORDS`)
     },
 
-    onError: (_, __, context) => {
-      // Rollback optimistic update
-      if (context?.prev) {
-        queryClient.setQueryData(['journal', 'list', 20], context.prev)
+    onError: (err: Error, __, context) => {
+      if (context?.previousList) {
+        queryClient.setQueryData(journalKeys.list({}), context.previousList)
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[NEXUS Journal] Save failed:', err.message)
       }
     },
   })
+}
+
+export function useJournalStats() {
+  const { data } = useJournalList(100)
+  const entries = data?.entries ?? []
+
+  return {
+    totalEntries: entries.length,
+    totalWords:   entries.reduce((sum, e) => sum + e.word_count, 0),
+    apexEntries:  entries.filter(e => e.mode === 'apex').length,
+    havenEntries: entries.filter(e => e.mode === 'haven').length,
+    avgWordCount: entries.length > 0
+      ? Math.round(entries.reduce((s, e) => s + e.word_count, 0) / entries.length)
+      : 0,
+  }
 }

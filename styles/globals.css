@@ -1989,6 +1989,53 @@ a:focus:not(:focus-visible),
   letter-spacing: -0.01em;
 }
 
+/* DataErrorBoundary */
+
+.data-error {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+  padding:        24px;
+  border:         1px solid rgba(255,68,68,0.2);
+  border-radius:  var(--radius-lg);
+  background:     rgba(255,68,68,0.04);
+}
+
+.data-error__label {
+  font-family:    var(--font-mono);
+  font-size:      9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          var(--color-error);
+}
+
+.data-error__message {
+  font-family: var(--font-mono);
+  font-size:   12px;
+  color:       var(--color-text-secondary);
+}
+
+.data-error__retry {
+  align-self:     flex-start;
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color:          var(--color-text-secondary);
+  background:     none;
+  border:         1px solid var(--color-border);
+  border-radius:  var(--radius-sm);
+  padding:        5px 10px;
+  cursor:         pointer;
+  transition:     color 150ms ease, border-color 150ms ease;
+  margin-top:     4px;
+}
+
+.data-error__retry:hover {
+  color:        var(--color-text-primary);
+  border-color: #262626;
+}
+
 .journal-entry__expand {
   font-family:    var(--font-mono);
   font-size:      9px;

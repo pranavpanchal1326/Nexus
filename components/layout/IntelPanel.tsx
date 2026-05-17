@@ -3,10 +3,11 @@
 import { useNexusStore } from '@/store/nexusStore'
 import { SignalDotLarge } from '@/components/ui/SignalDot'
 import { useTimeMode, type PreferredMode } from '@/hooks/useTimeMode'
-import { useStats } from '@/hooks/useStats'
+import { useRecentActivity, useStats } from '@/hooks/useStats'
 import { relativeTime } from '@/lib/utils'
 import { PanelAmbientIntel } from '@/components/modules/AmbientIntel'
 import { useDashboardAmbient } from '@/hooks/useAmbientAI'
+import { FeedItemSkeleton } from '@/components/ui'
 
 interface IntelPanelProps {
   userId:        string
@@ -16,10 +17,9 @@ interface IntelPanelProps {
 export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Element {
   const isIntelPanelOpen = useNexusStore(state => state.isIntelPanelOpen)
   const { mode, windowLabel, isHydrated } = useTimeMode(preferredMode)
-  const { data: stats, isLoading } = useStats()
+  const { data: stats, isLoading: statsLoading } = useStats()
   const { insight } = useDashboardAmbient(stats)
-
-  const activities = stats?.recent_activity ?? []
+  const activity = useRecentActivity(10)
 
   return (
     <aside className={`intel-panel ${isIntelPanelOpen ? 'intel-panel--open' : ''}`}>
@@ -47,31 +47,30 @@ export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Elemen
       </div>
 
       {/* Live Activity Feed */}
-      <div className="intel-feed custom-scrollbar">
-        {isLoading ? (
-          <ActivitySkeleton />
-        ) : activities.length > 0 ? (
-          activities.map((item, idx) => (
-            <div key={idx} className="intel-activity-item">
-              <div className="intel-activity-type">
-                {item.type.toUpperCase()}
+      <div className="intel-panel__feed custom-scrollbar">
+        {statsLoading
+          ? Array.from({ length: 3 }, (_, i) => <FeedItemSkeleton key={i} />)
+          : activity.length === 0
+          ? (
+              <div className="feed-empty">
+                <span className="feed-empty__label">NO ACTIVITY YET</span>
+                <span className="feed-empty__sub">Begin. The system is watching.</span>
               </div>
-              <p className="intel-activity-preview">
-                {item.preview}
-              </p>
-              <div className="intel-activity-time">
-                {relativeTime(item.created_at)}
+            )
+          : activity.map((item, i) => (
+              <div key={i} className="feed-item">
+                <div className="feed-item__type">
+                  {item.type.toUpperCase()}
+                </div>
+                <div className="feed-item__preview">
+                  {item.preview}
+                </div>
+                <div className="feed-item__time">
+                  {relativeTime(item.created_at)}
+                </div>
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="intel-empty">
-            <p className="intel-empty-label">NO ACTIVITY YET</p>
-            <p className="intel-empty-hint">
-              Begin. The system is watching.
-            </p>
-          </div>
-        )}
+            ))
+        }
       </div>
 
       {/* Ambient AI Whisper */}
@@ -224,17 +223,3 @@ export function IntelPanel({ preferredMode }: IntelPanelProps): React.JSX.Elemen
   )
 }
 
-function ActivitySkeleton(): React.JSX.Element {
-  return (
-    <div className="flex flex-col">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="px-4 py-3 border-b border-border-subtle">
-          <div className="w-16 h-2 skeleton-shimmer rounded mb-2" />
-          <div className="w-full h-3 skeleton-shimmer rounded mb-1" />
-          <div className="w-2/3 h-3 skeleton-shimmer rounded mb-2" />
-          <div className="w-10 h-2 skeleton-shimmer rounded" />
-        </div>
-      ))}
-    </div>
-  )
-}
