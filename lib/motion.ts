@@ -213,9 +213,9 @@ export const SIGNAL_PULSE_ANIMATION: TargetAndTransition = {
  */
 export function heatmapCellTransition(colIndex: number): Transition {
   return {
-    duration: DURATION.DELIBERATE,
+    duration: 0.4,
     ease:     EASING.EXPO_OUT,
-    delay:    colIndex * 0.008,   // 8ms per column
+    delay:    colIndex * 0.008,
   }
 }
 
