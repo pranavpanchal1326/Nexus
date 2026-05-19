@@ -66,7 +66,7 @@ export function useJournalList(limit = JOURNAL_PAGE_SIZE) {
 
 export function useInfiniteJournal(mode?: 'apex' | 'haven') {
   return useInfiniteQuery<JournalListPage>({
-    queryKey:    journalKeys.infinite({ mode }),
+    queryKey:    journalKeys.infinite(mode ? { mode } : {}),
     queryFn:     async ({ pageParam = 0 }) => {
       const params = new URLSearchParams({
         limit:  String(JOURNAL_PAGE_SIZE),

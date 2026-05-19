@@ -1,8 +1,21 @@
 'use client'
 import { motion } from 'framer-motion'
-import { SceneWrapper } from '@/components/three/SceneWrapper'
-import { Tesseract } from '@/components/three/Tesseract'
-import { AuroraField } from '@/components/three/AuroraField'
+import dynamic from 'next/dynamic'
+
+const SceneWrapper = dynamic(
+  () => import('@/components/three/SceneWrapper').then(mod => mod.SceneWrapper),
+  { ssr: false }
+)
+
+const Tesseract = dynamic(
+  () => import('@/components/three/Tesseract').then(mod => mod.Tesseract),
+  { ssr: false }
+)
+
+const AuroraField = dynamic(
+  () => import('@/components/three/AuroraField').then(mod => mod.AuroraField),
+  { ssr: false }
+)
 import { Heatmap } from '@/components/modules/Heatmap'
 import { ArtifactModule } from '@/components/modules/ArtifactModule'
 import { DashboardAmbientIntel } from '@/components/modules/AmbientIntel'

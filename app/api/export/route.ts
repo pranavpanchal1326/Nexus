@@ -139,7 +139,7 @@ export const GET = withAuth(async (_req, { userId }) => {
 
   // ─── Return ZIP as download ───────────────────────────────────────────────
 
-  return new Response(zipBuffer, {
+  return new Response(zipBuffer as any, {
     status: 200,
     headers: {
       'Content-Type': 'application/zip',

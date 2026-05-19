@@ -1,4 +1,4 @@
-import { type NextRequest } from 'next/server'
+
 import { withAuth, ok } from '@/lib/auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import {
@@ -7,7 +7,7 @@ import {
   truncatePreview,
 } from '@/lib/statsHelpers'
 
-export const GET = withAuth(async (_req: NextRequest, { userId }) => {
+export const GET = withAuth(async (_req: Request, { userId }) => {
   const supabase = await createServerSupabaseClient()
   const cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
   const cutoffIso = cutoffDate.toISOString().split('T')[0] ?? ''
@@ -59,8 +59,36 @@ export const GET = withAuth(async (_req: NextRequest, { userId }) => {
       .limit(3),
   ])
 
+  let profile = profileResult.data as any
+
+  if (profileResult.error) {
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        display_name: 'NEOPHYTE',
+        cognitive_xp: 0,
+        current_streak: 0,
+        longest_streak: 0,
+        preferred_mode: 'auto',
+        updated_at: new Date().toISOString(),
+      } as any)
+      .select('current_streak, longest_streak, cognitive_xp, preferred_mode')
+      .single()
+
+    if (!insertError && newProfile) {
+      profile = newProfile
+    } else {
+      profile = {
+        current_streak: 0,
+        longest_streak: 0,
+        cognitive_xp: 0,
+        preferred_mode: 'auto',
+      }
+    }
+  }
+
   const errors = [
-    profileResult.error,
     dailyStatsResult.error,
     recentJournalResult.error,
     recentGymResult.error,
@@ -72,8 +100,7 @@ export const GET = withAuth(async (_req: NextRequest, { userId }) => {
     throw new Error('Stats query failed')
   }
 
-  const profile = profileResult.data
-  const dailyStats = dailyStatsResult.data ?? []
+  const dailyStats = (dailyStatsResult.data as any[]) ?? []
 
   const journalCount = dailyStats.reduce((s, d) => s + (d.journal_count ?? 0), 0)
   const gymCount = dailyStats.reduce((s, d) => s + (d.gym_count ?? 0), 0)
@@ -104,7 +131,7 @@ export const GET = withAuth(async (_req: NextRequest, { userId }) => {
 
   const recentActivity: ActivityItem[] = []
 
-  ;(recentJournalResult.data ?? []).forEach(j => {
+  ;(recentJournalResult.data as any[] ?? []).forEach(j => {
     recentActivity.push({
       type: 'journal',
       preview: truncatePreview(j.content ?? ''),
@@ -112,7 +139,7 @@ export const GET = withAuth(async (_req: NextRequest, { userId }) => {
     })
   })
 
-  ;(recentGymResult.data ?? []).forEach(g => {
+  ;(recentGymResult.data as any[] ?? []).forEach(g => {
     const weightPart = g.weight !== null ? ` @ ${g.weight}${g.unit}` : ''
     recentActivity.push({
       type: 'gym',
@@ -121,7 +148,7 @@ export const GET = withAuth(async (_req: NextRequest, { userId }) => {
     })
   })
 
-  ;(recentDuelResult.data ?? []).forEach(d => {
+  ;(recentDuelResult.data as any[] ?? []).forEach(d => {
     if (!d.last_used_at) return
     recentActivity.push({
       type: 'duel',
@@ -130,7 +157,7 @@ export const GET = withAuth(async (_req: NextRequest, { userId }) => {
     })
   })
 
-  ;(recentOracleResult.data ?? []).forEach(o => {
+  ;(recentOracleResult.data as any[] ?? []).forEach(o => {
     recentActivity.push({
       type: 'oracle',
       preview: truncatePreview(o.content ?? ''),

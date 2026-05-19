@@ -64,6 +64,13 @@ export function formatTime(date: Date | string): string {
 }
 
 /**
+ * Format time as local time HH:MM (alias for formatTime)
+ */
+export function formatLocalTime(date: Date | string): string {
+  return formatTime(date)
+}
+
+/**
  * Relative time — "3 days ago", "just now"
  */
 export function relativeTime(date: Date | string): string {
@@ -145,7 +152,16 @@ export function isYesterday(date: Date | string): boolean {
  */
 export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str
-  return `${str.slice(0, maxLength - 3)}...`
+  return `${str.slice(0, maxLength - 3)}…`
+}
+
+/**
+ * Truncate string by word count
+ */
+export function truncateWords(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/)
+  if (words.length <= maxWords) return text
+  return words.slice(0, maxWords).join(' ') + '…'
 }
 
 /**

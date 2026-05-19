@@ -49,11 +49,11 @@ export default function SettingsPage() {
 
       setUserEmail(user.email ?? '')
 
-      const { data } = await supabase
+      const { data } = (await supabase
         .from('profiles')
         .select('display_name, preferred_mode')
         .eq('id', user.id)
-        .single()
+        .single()) as unknown as { data: any }
 
       if (data) {
         setProfile({
@@ -85,12 +85,13 @@ export default function SettingsPage() {
 
       const { error } = await supabase
         .from('profiles')
-        .update({
+        // @ts-ignore - supabase client types infer never here
+        .upsert({
+          id: user.id,
           display_name: profile.display_name.trim() || null,
           preferred_mode: profile.preferred_mode,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id)
+        } as any)
 
       if (error) throw error
 

@@ -159,52 +159,7 @@ export default function SignupPage(): React.JSX.Element {
         </p>
       </div>
 
-      <style jsx>{`
-        .nexus-input {
-          background: #0D0D0D;
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          height: 44px;
-          padding: 0 14px;
-          font-family: var(--font-mono);
-          font-size: 14px;
-          color: var(--color-text-primary);
-          transition: all 200ms ease;
-        }
-        .nexus-input:focus {
-          outline: none;
-          border-color: rgba(232, 255, 71, 0.4);
-          box-shadow: 0 0 0 3px rgba(232, 255, 71, 0.06);
-        }
-        .nexus-btn-primary {
-          width: 100%;
-          height: 48px;
-          background: transparent;
-          border: 1px solid rgba(232, 255, 71, 0.5);
-          border-radius: 8px;
-          font-family: var(--font-mono);
-          font-size: 12px;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: var(--color-signal);
-          transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
-          cursor: pointer;
-        }
-        .nexus-btn-primary:hover:not(:disabled) {
-          background: rgba(232, 255, 71, 0.04);
-          border-color: rgba(232, 255, 71, 0.8);
-          box-shadow: 0 0 24px rgba(232, 255, 71, 0.08);
-        }
-        .nexus-btn-primary:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-          animation: border-pulse 1.2s infinite;
-        }
-        @keyframes border-pulse {
-          0%, 100% { border-color: rgba(232, 255, 71, 0.3); }
-          50% { border-color: rgba(232, 255, 71, 0.8); }
-        }
-      `}</style>
+
     </main>
   )
 }

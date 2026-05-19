@@ -1,21 +1,53 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig }   from 'vitest/config'
+import { resolve }        from 'path'
+import react              from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./tests/unit/setup.ts'],
+    environment:    'jsdom',
+    globals:        true,
+    setupFiles:     ['./tests/setup/vitest.setup.ts'],
+    include:        [
+      'lib/**/*.test.ts',
+      'hooks/**/*.test.ts',
+      'components/**/*.test.ts',
+      'app/**/*.test.ts',
+    ],
+    exclude: [
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/tests/e2e/**',
+    ],
+    coverage: {
+      provider:   'v8',
+      reporter:   ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: [
+        'lib/**/*.ts',
+        'hooks/**/*.ts',
+        'components/**/*.tsx',
+      ],
+      exclude: [
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/node_modules/**',
+        '**/.next/**',
+        '**/types/**',
+      ],
+      thresholds: {
+        global: {
+          branches:   80,
+          functions:  80,
+          lines:      80,
+          statements: 80,
+        },
+      },
+    },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '.'),
-      // Mock server-only so modules with `import 'server-only'` can be
-      // unit-tested in Vitest without Next.js build context.
-      // The real package throws in browser/test envs — this is correct.
-      'server-only': path.resolve(__dirname, 'tests/unit/__mocks__/server-only.ts'),
+      '@': resolve(__dirname, '.'),
     },
   },
 })

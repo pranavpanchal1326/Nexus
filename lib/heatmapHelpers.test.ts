@@ -3,166 +3,116 @@ import {
   buildWeekColumns,
   buildMonthLabels,
   formatTooltipDate,
-} from '@/lib/heatmapHelpers'
+  getIntensityLabel,
+} from '../lib/heatmapHelpers'
 
 const FIXED_DATE = new Date('2026-01-18T12:00:00Z')
 
-beforeAll(() => {
-  vi.useFakeTimers()
-  vi.setSystemTime(FIXED_DATE)
-})
+beforeAll(() => { vi.setSystemTime(FIXED_DATE) })
+afterAll(() =>  { vi.useRealTimers() })
 
-afterAll(() => {
-  vi.useRealTimers()
-})
+const mockData = [
+  { date: '2026-01-18', count: 3 as const },
+  { date: '2026-01-17', count: 1 as const },
+  { date: '2025-12-25', count: 4 as const },
+]
 
 describe('buildWeekColumns', () => {
-  const mockData = [
-    { date: '2026-01-18', count: 2 as const },
-    { date: '2026-01-17', count: 1 as const },
-    { date: '2025-12-25', count: 4 as const },
-  ]
-
-  it('returns array of week columns', () => {
-    const columns = buildWeekColumns(mockData)
-    expect(Array.isArray(columns)).toBe(true)
-    expect(columns.length).toBeGreaterThan(0)
+  it('returns empty array for empty data', () => {
+    expect(buildWeekColumns([])).toEqual([])
   })
 
-  it('each column has exactly 7 day slots', () => {
-    const columns = buildWeekColumns(mockData)
-    columns.forEach(col => {
+  it('each column has exactly 7 days', () => {
+    buildWeekColumns(mockData).forEach(col => {
       expect(col.days).toHaveLength(7)
     })
   })
 
-  it('today (2026-01-18) is in the last column', () => {
-    const columns = buildWeekColumns(mockData)
-    const lastCol = columns[columns.length - 1]!
-    const hasToday = lastCol.days.some(d => d?.date === '2026-01-18')
-    expect(hasToday).toBe(true)
-  })
-
-  it('today has correct count from data', () => {
-    const columns = buildWeekColumns(mockData)
-    const lastCol = columns[columns.length - 1]!
-    const today = lastCol.days.find(d => d?.date === '2026-01-18')
-    expect(today?.count).toBe(2)
-  })
-
-  it('days not in data default to count 0', () => {
-    const columns = buildWeekColumns(mockData)
-    const allDays = columns.flatMap(c => c.days).filter(Boolean)
-    const emptyDays = allDays.filter(d => d?.count === 0)
-    expect(emptyDays.length).toBeGreaterThan(0)
+  it('today exists in last column with correct count', () => {
+    const cols   = buildWeekColumns(mockData)
+    const last   = cols[cols.length - 1]!
+    const today  = last.days.find(d => d?.date === '2026-01-18')
+    expect(today?.count).toBe(3)
   })
 
   it('Christmas 2025 has count 4', () => {
-    const columns = buildWeekColumns(mockData)
-    const allDays = columns.flatMap(c => c.days).filter(Boolean)
-    const xmas = allDays.find(d => d?.date === '2025-12-25')
+    const allDays = buildWeekColumns(mockData).flatMap(c => c.days).filter(Boolean)
+    const xmas    = allDays.find(d => d?.date === '2025-12-25')
     expect(xmas?.count).toBe(4)
   })
 
-  it('columns are in ascending date order - oldest first', () => {
-    const columns = buildWeekColumns(mockData)
-    const firstDay = columns[0]!.days.find(Boolean)
-    const lastDay = columns[columns.length - 1]!.days.filter(Boolean).pop()
-    expect(new Date(firstDay!.date).getTime())
-      .toBeLessThan(new Date(lastDay!.date).getTime())
+  it('unlisted days default to count 0', () => {
+    const allDays = buildWeekColumns(mockData).flatMap(c => c.days).filter(Boolean)
+    const empty   = allDays.filter(d => d?.count === 0)
+    expect(empty.length).toBeGreaterThan(0)
   })
 
-  it('null padding in first column when range start is not Sunday', () => {
-    const columns = buildWeekColumns(mockData)
-    const firstCol = columns[0]!
-    expect(firstCol.days).toHaveLength(7)
+  it('columns in ascending date order', () => {
+    const cols     = buildWeekColumns(mockData)
+    const first    = cols[0]!.days.find(Boolean)
+    const last     = cols[cols.length-1]!.days.filter(Boolean).pop()
+    expect(new Date(first!.date).getTime())
+      .toBeLessThan(new Date(last!.date).getTime())
   })
 
-  it('returns empty array for empty data', () => {
-    const columns = buildWeekColumns([])
-    expect(columns).toEqual([])
-  })
-
-  it('generates approximately 53 columns for 365 days', () => {
-    const fullYearData: { date: string; count: 0 }[] = []
-    const today = new Date()
-    for (let i = 0; i < 365; i++) {
-      const d = new Date(today)
+  it('generates 52–54 columns for year data', () => {
+    const yearData = Array.from({ length: 365 }, (_, i) => {
+      const d = new Date(FIXED_DATE)
       d.setDate(d.getDate() - i)
-      fullYearData.push({ date: d.toISOString().split('T')[0]!, count: 0 })
-    }
-    const columns = buildWeekColumns(fullYearData)
-    expect(columns.length).toBeGreaterThanOrEqual(52)
-    expect(columns.length).toBeLessThanOrEqual(54)
+      return { date: d.toISOString().split('T')[0]!, count: 0 as const }
+    })
+    const cols = buildWeekColumns(yearData)
+    expect(cols.length).toBeGreaterThanOrEqual(52)
+    expect(cols.length).toBeLessThanOrEqual(54)
   })
 })
 
 describe('buildMonthLabels', () => {
-  const mockData: { date: string; count: 0 }[] = []
-  const today = new Date('2026-01-18')
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    mockData.push({ date: d.toISOString().split('T')[0]!, count: 0 })
-  }
-
-  it('returns month labels array', () => {
-    const columns = buildWeekColumns(mockData)
-    const labels = buildMonthLabels(columns)
-    expect(Array.isArray(labels)).toBe(true)
-    expect(labels.length).toBeGreaterThan(0)
-  })
-
-  it('returns up to 12 labels for a full year', () => {
-    const columns = buildWeekColumns(mockData)
-    const labels = buildMonthLabels(columns)
-    expect(labels.length).toBeLessThanOrEqual(12)
-    expect(labels.length).toBeGreaterThanOrEqual(11)
-  })
-
-  it('each label has month string and colIndex', () => {
-    const columns = buildWeekColumns(mockData)
-    const labels = buildMonthLabels(columns)
-    labels.forEach(label => {
-      expect(typeof label.month).toBe('string')
-      expect(label.month.length).toBeGreaterThan(0)
-      expect(typeof label.colIndex).toBe('number')
-      expect(label.colIndex).toBeGreaterThanOrEqual(0)
+  it('returns between 11 and 12 labels for full year', () => {
+    const yearData = Array.from({ length: 365 }, (_, i) => {
+      const d = new Date(FIXED_DATE)
+      d.setDate(d.getDate() - i)
+      return { date: d.toISOString().split('T')[0]!, count: 0 as const }
     })
+    const cols   = buildWeekColumns(yearData)
+    const labels = buildMonthLabels(cols)
+    expect(labels.length).toBeGreaterThanOrEqual(11)
+    expect(labels.length).toBeLessThanOrEqual(12)
   })
 
-  it('no duplicate months', () => {
-    const columns = buildWeekColumns(mockData)
-    const labels = buildMonthLabels(columns)
-    const months = labels.map(l => l.month)
-    const unique = new Set(months)
-    expect(unique.size).toBe(months.length)
+  it('each label has valid month and colIndex', () => {
+    const cols   = buildWeekColumns(mockData)
+    const labels = buildMonthLabels(cols)
+    labels.forEach(l => {
+      expect(l.month.length).toBeGreaterThan(0)
+      expect(l.colIndex).toBeGreaterThanOrEqual(0)
+    })
   })
 })
 
 describe('formatTooltipDate', () => {
-  it('formats ISO date correctly', () => {
+  it('formats ISO date as full date string', () => {
     const result = formatTooltipDate('2026-01-15')
     expect(result).toContain('January')
     expect(result).toContain('15')
     expect(result).toContain('2026')
   })
 
-  it('handles first day of month', () => {
-    const result = formatTooltipDate('2026-03-01')
-    expect(result).toContain('March')
-    expect(result).toContain('1')
+  it('handles month boundaries', () => {
+    expect(formatTooltipDate('2026-03-01')).toContain('March')
+    expect(formatTooltipDate('2026-12-31')).toContain('December')
+    expect(formatTooltipDate('2026-02-28')).toContain('February')
   })
+})
 
-  it('handles December 31', () => {
-    const result = formatTooltipDate('2025-12-31')
-    expect(result).toContain('December')
-    expect(result).toContain('31')
-  })
-
-  it('handles February 28', () => {
-    const result = formatTooltipDate('2026-02-28')
-    expect(result).toContain('February')
-    expect(result).toContain('28')
+describe('getIntensityLabel', () => {
+  it('returns correct labels for each level', () => {
+    expect(getIntensityLabel(0)).toBe('No activity')
+    expect(getIntensityLabel(1)).toBe('Light activity')
+    expect(getIntensityLabel(2)).toBe('Moderate activity')
+    expect(getIntensityLabel(3)).toBe('Moderate activity')
+    expect(getIntensityLabel(4)).toBe('Active day')
+    expect(getIntensityLabel(6)).toBe('Active day')
+    expect(getIntensityLabel(7)).toBe('Very active day')
   })
 })

@@ -29,7 +29,7 @@ export function generateDateRange(days = 365): string[] {
 export function truncatePreview(text: string, maxLen = 80): string {
   const trimmed = text.trim()
   return trimmed.length > maxLen
-    ? trimmed.slice(0, maxLen).trim() + '...'
+    ? trimmed.slice(0, maxLen).trim() + '…'
     : trimmed
 }
 
