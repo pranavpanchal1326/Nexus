@@ -1,136 +1,179 @@
 'use client'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
-import { useEffect, useRef, useState } from 'react'
-import { useMode } from '@/store/nexusStore'
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface OdometerNumberProps {
-  /** The number to display */
   value: number
-  /** Optional suffix — "days", "xp", "words" */
-  suffix?: string
-  /** Font size in px — defaults to inherit */
-  fontSize?: number
-  /** Color — defaults to text-primary */
-  color?: string
   className?: string
-  style?: React.CSSProperties
+  prefix?: string
+  suffix?: string
+  /** Format with commas — 1234 → 1,234 */
+  format?: boolean
+  /** Animation duration in seconds */
+  duration?: number
+  /** Delay before rolling in seconds */
+  delay?: number
+  /** Style applied to the outer container */
+  style?: CSSProperties
 }
 
-/**
- * OdometerNumber — rolling number display
- *
- * PRD Section 2.5:
- * "Number odometer: y: 0→-100% out, 100%→0 in, 150ms"
- *
- * When value changes:
- * 1. Old number rolls UP and out
- * 2. New number rolls UP from below
- * Mode-aware speed: APEX 150ms, HAVEN 240ms
- */
+// ─── Digit roller — single digit position ─────────────────────────────────────
+
+interface DigitRollerProps {
+  digit: string
+  prevDigit: string
+  direction: 'up' | 'down' | 'none'
+  duration: number
+  delay: number
+  index: number
+}
+
+function DigitRoller({
+  digit,
+  prevDigit,
+  direction,
+  duration,
+  delay,
+  index,
+}: DigitRollerProps) {
+  const isNumeric = /^\d$/.test(digit)
+
+  // Non-numeric chars (commas, decimals) — static, no animation
+  if (!isNumeric || digit === prevDigit || direction === 'none') {
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          lineHeight: 'inherit',
+        }}
+      >
+        {digit}
+      </span>
+    )
+  }
+
+  const exitY = direction === 'up' ? '-100%' : '100%'
+  const enterY = direction === 'up' ? '100%' : '-100%'
+
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        overflow: 'hidden',
+        lineHeight: 'inherit',
+        verticalAlign: 'bottom',
+      }}
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={`${digit}-${index}`}
+          style={{ display: 'inline-block' }}
+          initial={{ y: enterY, opacity: 0 }}
+          animate={{ y: '0%', opacity: 1 }}
+          exit={{ y: exitY, opacity: 0 }}
+          transition={{
+            duration,
+            delay: delay + index * 0.015,
+            ease: [0.4, 0, 0.2, 1],
+          }}
+        >
+          {digit}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export function OdometerNumber({
   value,
-  suffix,
-  fontSize,
-  color,
   className,
+  prefix,
+  suffix,
+  format = false,
+  duration = 0.15,
+  delay = 0,
   style,
-}: OdometerNumberProps): React.JSX.Element {
-  const mode = useMode()
-  const duration = mode === 'apex' ? 150 : 240
-
+}: OdometerNumberProps) {
   const [displayValue, setDisplayValue] = useState(value)
-  const [isRolling, setIsRolling] = useState(false)
-  const [incomingValue, setIncomingValue] = useState(value)
-  const prevValue = useRef(value)
+  const [prevValue, setPrevValue] = useState(value)
+  const [direction, setDirection] = useState<'up' | 'down' | 'none'>('none')
+  const isFirstRender = useRef(true)
 
-  useEffect((): (() => void) | void => {
-    if (value === prevValue.current) return
-
-    // Start roll animation
-    setIncomingValue(value)
-    setIsRolling(true)
-
-    const timer = setTimeout((): void => {
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
       setDisplayValue(value)
-      setIsRolling(false)
-      prevValue.current = value
-    }, duration)
+      setPrevValue(value)
+      return
+    }
 
-    return () => clearTimeout(timer)
-  }, [value, duration])
+    if (value === displayValue) return
 
-  const sharedStyle: React.CSSProperties = {
-    fontFamily: 'var(--font-mono)',
-    fontVariantNumeric: 'tabular-nums',
-    fontSize: fontSize !== undefined ? `${fontSize}px` : 'inherit',
-    color: color ?? 'var(--color-text-primary)',
-    letterSpacing: '-0.02em',
-    lineHeight: 1,
-    display: 'inline-block',
+    setDirection(value > displayValue ? 'up' : 'down')
+    setPrevValue(displayValue)
+    setDisplayValue(value)
+  }, [value, displayValue])
+
+  // Format value — with or without commas
+  const formatValue = (n: number): string => {
+    if (format) return n.toLocaleString('en-US')
+    return String(Math.round(n))
   }
+
+  const currentStr = formatValue(displayValue)
+  const prevStr = formatValue(prevValue)
+
+  // Pad shorter string with leading spaces so digit positions align
+  const maxLen = Math.max(currentStr.length, prevStr.length)
+  const currPad = currentStr.padStart(maxLen, ' ')
+  const prevPad = prevStr.padStart(maxLen, ' ')
+
+  const digits = useMemo(
+    () =>
+      currPad.split('').map((char, i) => ({
+        current: char,
+        previous: prevPad[i] ?? ' ',
+      })),
+    [currPad, prevPad]
+  )
 
   return (
     <span
       className={className}
       style={{
-        position: 'relative',
-        overflow: 'hidden',
         display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        verticalAlign: 'middle',
+        alignItems: 'baseline',
+        fontVariantNumeric: 'tabular-nums',
+        fontFeatureSettings: '"tnum"',
         ...style,
       }}
+      aria-label={`${prefix ?? ''}${value}${suffix ?? ''}`}
+      aria-live="polite"
+      aria-atomic="true"
     >
-      {/* Outgoing number — rolls up and out */}
-      {isRolling && (
-        <span
-          aria-hidden="true"
-          style={{
-            ...sharedStyle,
-            position: 'absolute',
-            animation: `odometer-out ${duration}ms cubic-bezier(0.4,0,0.2,1) forwards`,
-          }}
-        >
-          {displayValue.toLocaleString()}
-        </span>
+      {prefix && (
+        <span style={{ marginRight: 1 }}>{prefix}</span>
       )}
 
-      {/* Incoming number — rolls up from below */}
-      <span
-        style={{
-          ...sharedStyle,
-          animation: isRolling
-            ? `odometer-in ${duration}ms cubic-bezier(0.16,1,0.3,1) forwards`
-            : 'none',
-          visibility: isRolling ? 'visible' : 'visible',
-        }}
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {isRolling
-          ? incomingValue.toLocaleString()
-          : displayValue.toLocaleString()}
-      </span>
+      {digits.map((d, i) => (
+        <DigitRoller
+          key={i}
+          digit={d.current}
+          prevDigit={d.previous}
+          direction={direction}
+          duration={duration}
+          delay={delay}
+          index={i}
+        />
+      ))}
 
-      {/* Suffix */}
-      {suffix !== undefined && (
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: fontSize !== undefined
-              ? `${Math.round(fontSize * 0.6)}px`
-              : '11px',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-secondary)',
-          }}
-        >
-          {suffix}
-        </span>
+      {suffix && (
+        <span style={{ marginLeft: 2 }}>{suffix}</span>
       )}
     </span>
   )
 }
-
-export default OdometerNumber

@@ -35,11 +35,8 @@ export function DashboardClient({
     prefetch()
   }, [prefetch])
 
-  const { data: stats, isLoading, derived } = useStats()
+  const { data: stats, isLoading } = useStats()
   const { insight: ambientInsight } = useDashboardAmbient(stats)
-
-  const streak = stats?.current_streak ?? initialStreak
-  const xp = stats?.cognitive_xp ?? initialXP
 
   return (
     <div className="dashboard-page">
@@ -86,11 +83,8 @@ export function DashboardClient({
         <motion.div variants={CARD_REVEAL_VARIANTS}>
           <DataErrorBoundary module="stats">
             <ArtifactModule
-              streak={streak}
-              xp={xp}
-              longestStreak={stats?.longest_streak ?? initialStreak}
-              isLoading={isLoading}
-              derived={derived}
+              initialStreak={initialStreak}
+              initialXP={initialXP}
             />
           </DataErrorBoundary>
         </motion.div>

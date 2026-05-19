@@ -109,9 +109,16 @@ export default function UIKitTest(): React.JSX.Element {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <p className="text-caption">Odometer Number</p>
         <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-          <OdometerNumber value={count} fontSize={48} suffix="days" />
-          <OdometerNumber value={count * 10} fontSize={32} suffix="xp"
-            color="var(--color-signal)" />
+          <OdometerNumber
+            value={count}
+            suffix="days"
+            style={{ fontSize: 48 }}
+          />
+          <OdometerNumber
+            value={count * 10}
+            suffix="xp"
+            style={{ fontSize: 32, color: 'var(--color-signal)' }}
+          />
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <Button variant="surface" size="sm"
