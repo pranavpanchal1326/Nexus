@@ -7,6 +7,7 @@ import {
 import { withAuth, badRequest } from '@/lib/auth'
 import { ChatRequestSchema, parseRequest } from '@/types/api'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import type { ChatMessageInsert } from '@/types/database'
 
 // ─── POST /api/chat ───────────────────────────────────────────────────────────
 
@@ -49,14 +50,15 @@ export const POST = withAuth(async (req: Request, { userId }) => {
   // The trg_oracle_stat trigger auto-increments oracle_count on insert.
   const supabase = createServiceRoleClient()
 
-  await supabase.from('chat_history').insert({
+  const userMsg: ChatMessageInsert = {
     user_id: userId,
     role:    'user',
     content: message,
     mode,
     persona: personaName,
     model:   GROQ_MODEL,
-  } as any)
+  }
+  await supabase.from('chat_history').insert(userMsg as never)
 
   // ─── 5. Create Groq stream ─────────────────────────────────────────────────
   let groqStream: AsyncIterable<{
@@ -112,21 +114,22 @@ export const POST = withAuth(async (req: Request, { userId }) => {
         // Fire and forget — never block the stream close.
         // Only persist if we got a meaningful response.
         if (fullResponse.trim().length > 0) {
-          supabase.from('chat_history').insert({
+          const assistantMsg: ChatMessageInsert = {
             user_id: userId,
             role:    'assistant',
             content: fullResponse.trim(),
             mode,
             persona: personaName,
             model:   GROQ_MODEL,
-          } as any).then(({ error }) => {
+          }
+          supabase.from('chat_history').insert(assistantMsg as never).then(({ error }) => {
             if (error && process.env.NODE_ENV === 'development') {
               console.error('[NEXUS] Failed to persist assistant message:', error)
             }
           })
 
           // ─── 8. Recalculate streak after oracle interaction ────────────────
-          supabase.rpc('recalculate_streak', { p_user_id: userId } as any)
+          supabase.rpc('recalculate_streak' as never, { p_user_id: userId } as never)
             .then(() => {/* silent — streak update is best-effort */})
         }
       }

@@ -22,7 +22,7 @@ export function buildWeekColumns(data: HeatmapDay[]): WeekColumn[] {
   firstSunday.setDate(firstSunday.getDate() - firstSunday.getDay())
 
   const columns: WeekColumn[] = []
-  let current = new Date(firstSunday)
+  const current = new Date(firstSunday)
 
   while (current <= today) {
     const days: (HeatmapDay | null)[] = []

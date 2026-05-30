@@ -79,8 +79,9 @@ test.describe('Design System Audit', () => {
         let clsValue = 0
         const observer = new PerformanceObserver((list) => {
           list.getEntries().forEach(entry => {
-            if (!(entry as any).hadRecentInput) {
-              clsValue += (entry as any).value
+            const layoutEntry = entry as PerformanceEntry & { hadRecentInput: boolean; value: number }
+            if (!layoutEntry.hadRecentInput) {
+              clsValue += layoutEntry.value
             }
           })
         })

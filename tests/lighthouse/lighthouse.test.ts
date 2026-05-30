@@ -23,7 +23,8 @@ test.describe('Lighthouse Audit', () => {
     const { default: lighthouse } = await import('lighthouse')
 
     // Get the browser's debugging port
-    const browserWsEndpoint = (browser as any).wsEndpoint ? (browser as any).wsEndpoint() : ''
+    const wsEndpoint = (browser as { wsEndpoint?(): string }).wsEndpoint
+    const browserWsEndpoint = wsEndpoint ? wsEndpoint() : ''
     const port = browserWsEndpoint ? parseInt(new URL(browserWsEndpoint).port) : 9222
 
     const result = await lighthouse('http://localhost:3000/dashboard', {
@@ -77,7 +78,9 @@ test.describe('Lighthouse Audit', () => {
     await page.waitForTimeout(2000)
 
     const { default: lighthouse } = await import('lighthouse')
-    const port = (browser as any).wsEndpoint ? parseInt(new URL((browser as any).wsEndpoint()).port) : 9222
+    const port = (browser as unknown as { wsEndpoint?(): string }).wsEndpoint
+      ? parseInt(new URL((browser as unknown as { wsEndpoint(): string }).wsEndpoint()).port)
+      : 9222
 
     const result = await lighthouse('http://localhost:3000/oracle', {
       port,

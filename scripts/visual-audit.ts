@@ -25,7 +25,7 @@ function walkDir(dir: string): string[] {
         files.push(path)
       }
     }
-  } catch (e) {
+  } catch {
     // Skip
   }
   return files

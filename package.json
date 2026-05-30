@@ -25,7 +25,8 @@
     "audit:signal": "npx ts-node scripts/visual-audit.ts",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "audit": "npm run type-check && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

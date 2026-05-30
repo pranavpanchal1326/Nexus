@@ -8,6 +8,7 @@ import {
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { groq, GROQ_MODEL_FAST, MAX_TOKENS } from '@/lib/groq'
 import { GYM_DELTA_SYSTEM }           from '@/lib/personas'
+import type { GymLogInsert }          from '@/types/database'
 
 // ─── GET /api/gym ─────────────────────────────────────────────────────────────
 
@@ -74,7 +75,14 @@ export const POST = withAuth(async (req: Request, { userId }) => {
     .order('created_at', { ascending: false })
     .limit(10)
 
-  const previousLogs = previousLogsRaw as any[]
+  // Cast to a typed shape for the previous session calculation
+  const previousLogs = (previousLogsRaw ?? []) as {
+    sets: number
+    reps: number
+    weight: number | null
+    unit: string
+    created_at: string
+  }[]
 
   // Calculate previous session volume
   // Group by day — find last distinct session date
@@ -144,7 +152,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   // ─── Insert gym log ───────────────────────────────────────────────────────
 
-  const payload: any = {
+  const payload: GymLogInsert = {
       user_id:      userId,
       exercise,
       sets,
@@ -157,7 +165,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   const { data: log, error } = await supabase
     .from('gym_logs')
-    .insert(payload)
+    .insert(payload as never)
     .select('id, exercise, sets, reps, weight, unit, notes, volume_delta, created_at')
     .single()
 
@@ -170,13 +178,13 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   // ─── Fire and forget side effects ─────────────────────────────────────────
 
-  supabase.rpc('increment_gym_stat', { p_user_id: userId } as any)
+  supabase.rpc('increment_gym_stat' as never, { p_user_id: userId } as never)
     .then(() => {/* silent */})
 
-  supabase.rpc('recalculate_streak', { p_user_id: userId } as any)
+  supabase.rpc('recalculate_streak' as never, { p_user_id: userId } as never)
     .then(() => {/* silent */})
 
-  supabase.rpc('increment_cognitive_xp', { p_user_id: userId, p_xp: 15 } as any)
+  supabase.rpc('increment_cognitive_xp' as never, { p_user_id: userId, p_xp: 15 } as never)
     .then(() => {/* silent */})
 
   return ok({

@@ -85,7 +85,7 @@ export function useKeyboard(shortcuts: KeyboardShortcut[]): void {
       shortcut.handler(e)
       return  // First match wins
     }
-  }, [shortcuts]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shortcuts])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

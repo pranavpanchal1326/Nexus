@@ -39,9 +39,12 @@ export function ProtocolZero(): React.JSX.Element {
   const sequenceRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const HOLD_DURATION = 2000 // 2s hold to trigger
 
-  const getRandomPhrase = useCallback((m: Mode): string => {
+  const getPhrase = useCallback((m: Mode): string => {
     const phrases = PROTOCOL_ZERO_PHRASES[m]
-    return phrases[Math.floor(Math.random() * phrases.length)]
+    // Use Date.now() modulo to cycle through phrases deterministically —
+    // no Math.random(), result is stable within the same second
+    const index = Math.floor(Date.now() / 1000) % phrases.length
+    return phrases[index] ?? phrases[0] ?? ''
   }, [])
 
   const speakPhrase = useCallback((phrase: string, m: Mode) => {
@@ -68,7 +71,7 @@ export function ProtocolZero(): React.JSX.Element {
   const triggerProtocolZero = useCallback(() => {
     if (phase !== 'idle') return
 
-    const phrase = getRandomPhrase(mode)
+    const phrase = getPhrase(mode)
 
     setPhase('blackout')
     setShowLine1(false)
@@ -97,7 +100,7 @@ export function ProtocolZero(): React.JSX.Element {
     }, 5400)
 
     sequenceRef.current = [t1, t2, t3, t4, t5]
-  }, [phase, mode, getRandomPhrase, speakPhrase])
+  }, [phase, mode, getPhrase, speakPhrase])
 
   // Keyboard — hold Escape 2s
   useEffect((): (() => void) => {

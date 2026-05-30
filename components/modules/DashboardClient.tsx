@@ -36,11 +36,10 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({
-  userId: _userId,
   initialStreak,
   initialXP,
   displayName,
-}: DashboardClientProps) {
+}: DashboardClientProps): React.ReactElement {
   const mode = useNexusStore(state => state.mode)
   const prefetch = usePrefetchStats()
 

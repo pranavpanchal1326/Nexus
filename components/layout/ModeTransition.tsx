@@ -13,11 +13,25 @@ interface Particle {
   delay: number     // staggered — 0 to 200ms
 }
 
+// Halton sequence (base 2 and base 3) for deterministic, well-distributed
+// particle positions — reproducible, no Math.random() needed
+function halton(index: number, base: number): number {
+  let result = 0
+  let f = 1
+  let i = index + 1
+  while (i > 0) {
+    f /= base
+    result += f * (i % base)
+    i = Math.floor(i / base)
+  }
+  return result
+}
+
 function generateParticles(mode: Mode): Particle[] {
   return Array.from({ length: 12 }, (_, i) => ({
     id: i,
-    x: 10 + Math.random() * 80,
-    y: 10 + Math.random() * 80,
+    x: 10 + halton(i, 2) * 80,
+    y: 10 + halton(i, 3) * 80,
     variant: mode === 'apex' ? 'line' : 'dot',
     delay: i * 16,
   }))

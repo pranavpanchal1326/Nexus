@@ -66,9 +66,9 @@ vi.mock('@/lib/groq', () => ({
 const mockInsert = vi.fn(() => Promise.resolve({ error: null }))
 const mockGetUser = vi.fn(() =>
   Promise.resolve({
-    data:  { user: { id: 'test-user-id', email: 'test@nexus.app' } },
-    error: null,
-  } as any)
+    data:  { user: { id: 'test-user-id', email: 'test@nexus.app' } as unknown as { id: string; email: string } | null },
+    error: null as unknown as Error | null,
+  })
 )
 const mockRpc = vi.fn(() => Promise.resolve({ error: null }))
 
@@ -114,7 +114,7 @@ describe('POST /api/chat', () => {
     mockGetUser.mockResolvedValueOnce({
       data:  { user: null },
       error: new Error('No session'),
-    } as any)
+    })
 
     const { POST } = await import('./route')
     const res = await POST(makeRequest('http://localhost/api/chat', {

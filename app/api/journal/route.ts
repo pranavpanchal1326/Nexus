@@ -22,7 +22,7 @@ export const GET = withAuth(async (req: Request, { userId }) => {
   if (!parsed.success) return badRequest(parsed.error)
 
   const { limit, offset, mode } = parsed.data
-  const supabase = (await createServerSupabaseClient()) as any
+  const supabase = await createServerSupabaseClient()
 
   let query = supabase
     .from('journals')
@@ -66,7 +66,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
   const { content, mode } = parsed.data
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length
 
-  const supabase = (await createServerSupabaseClient()) as any
+  const supabase = await createServerSupabaseClient()
 
   // ─── Generate AI insight asynchronously ───────────────────────────────────
   // Generate insight in parallel with DB write — don't block the response
@@ -109,7 +109,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
       mode,
       word_count: wordCount,
       ai_insight: aiInsight,
-    })
+    } as never)
     .select('id, content, mode, word_count, ai_insight, created_at')
     .single()
 
@@ -122,20 +122,19 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   // ─── Update daily stats ───────────────────────────────────────────────────
   // Fire and forget — does not block response
-  supabase.rpc('increment_journal_stat_rpc', { p_user_id: userId })
+  supabase.rpc('increment_journal_stat_rpc' as never, { p_user_id: userId } as never)
     .then(() => {/* silent */})
 
-  // ─── Recalculate streak ───────────────────────────────────────────────────
-  supabase.rpc('recalculate_streak', { p_user_id: userId })
+  // ─── Recalculate streak ──────────────────────────────────────────────────────────────────
+  supabase.rpc('recalculate_streak' as never, { p_user_id: userId } as never)
     .then(() => {/* silent */})
 
-  // ─── Update cognitive XP ──────────────────────────────────────────────────
+  // ─── Update cognitive XP ───────────────────────────────────────────────────────────
   const xpGained = Math.min(Math.floor(wordCount / 10), 50)   // 1 XP per 10 words, max 50
 
   // Simpler XP increment
-  supabase.rpc('increment_cognitive_xp', { p_user_id: userId, p_xp: xpGained })
+  supabase.rpc('increment_cognitive_xp' as never, { p_user_id: userId, p_xp: xpGained } as never)
     .then(() => {/* silent */})
-    .catch(() => {/* silent */})
 
   return ok({ entry }, 201)
 })

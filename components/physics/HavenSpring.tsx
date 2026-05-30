@@ -63,7 +63,7 @@ export const HavenSpring = forwardRef<HTMLDivElement, HavenSpringProps>(
     },
     ref
   ) {
-    const presetProps = disabled
+    const presetProps: HTMLMotionProps<'div'> = disabled
       ? {}
       : preset === 'press'
       ? HAVEN_PRESS_PROPS
@@ -82,8 +82,8 @@ export const HavenSpring = forwardRef<HTMLDivElement, HavenSpringProps>(
         ref={ref}
         className={className}
         {...presetProps}
-        {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
-        transition={props.transition ?? (presetProps as any).transition ?? SPRING.FLOAT}
+        {...Object.fromEntries(Object.entries(props).filter(([ , v]) => v !== undefined))}
+        transition={props.transition ?? presetProps.transition ?? SPRING.FLOAT}
       >
         {children}
       </MotionTag>
@@ -119,7 +119,7 @@ export function HavenButton({
         opacity: disabled ? 0.4 : 1,
         ...props.style,
       }}
-      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
+      {...Object.fromEntries(Object.entries(props).filter(([ , v]) => v !== undefined))}
     >
       {children}
     </motion.button>
@@ -146,7 +146,7 @@ export function HavenCard({
       }}
       {...(onClick && { whileTap: { scale: 0.995, transition: SPRING.FLOAT } })}
       transition={SPRING.FLOAT}
-      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
+      {...Object.fromEntries(Object.entries(props).filter(([ , v]) => v !== undefined))}
     >
       {children}
     </motion.div>

@@ -57,7 +57,7 @@ export const ApexSpring = forwardRef<HTMLDivElement, ApexSpringProps>(
     ref
   ) {
     // Resolve preset interaction props
-    const presetProps = disabled
+    const presetProps: HTMLMotionProps<'div'> = disabled
       ? {}
       : preset === 'press'
       ? APEX_PRESS_PROPS
@@ -74,9 +74,9 @@ export const ApexSpring = forwardRef<HTMLDivElement, ApexSpringProps>(
         ref={ref}
         className={className}
         {...presetProps}
-        {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
+        {...Object.fromEntries(Object.entries(props).filter(([ , v]) => v !== undefined))}
         // Merge transition — prop transition overrides preset if provided
-        transition={props.transition ?? (presetProps as any).transition ?? SPRING.SNAP}
+        transition={props.transition ?? presetProps.transition ?? SPRING.SNAP}
       >
         {children}
       </MotionTag>
@@ -113,7 +113,7 @@ export function ApexButton({
         opacity: disabled ? 0.4 : 1,
         ...props.style,
       }}
-      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
+      {...Object.fromEntries(Object.entries(props).filter(([ , v]) => v !== undefined))}
     >
       {children}
     </motion.button>
@@ -141,7 +141,7 @@ export function ApexCard({
       }}
       {...(onClick && { whileTap: { scale: 0.99, transition: SPRING.SNAP } })}
       transition={SPRING.SNAP}
-      {...Object.fromEntries(Object.entries(props).filter(([_, v]) => v !== undefined))}
+      {...Object.fromEntries(Object.entries(props).filter(([ , v]) => v !== undefined))}
     >
       {children}
     </motion.div>

@@ -76,17 +76,23 @@ export function useLexiconWords(limit = 100) {
   })
 }
 
-export function useSortedWords(sortMode: WordSortMode = 'recent', search = '') {
+export function useSortedWords(sortMode: WordSortMode = 'recent', search = ''): {
+  words: LexiconWord[]
+  isLoading: boolean
+  error: Error | null
+  total: number
+} {
   const { data, isLoading, error } = useLexiconWords(200)
-  const words = data?.words ?? []
+  const words = data?.words
 
   const processed = useMemo(() => {
-    let filtered = search.trim()
-      ? words.filter(w =>
+    const wordsList = words ?? []
+    const filtered = search.trim()
+      ? wordsList.filter(w =>
           w.word.toLowerCase().includes(search.toLowerCase()) ||
           w.definition.toLowerCase().includes(search.toLowerCase())
         )
-      : words
+      : wordsList
 
     const sorted = [...filtered]
     switch (sortMode) {

@@ -5,6 +5,7 @@ import {
   parseRequest,
 }                                     from '@/types/api'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import type { WordLexiconInsert }     from '@/types/database'
 
 // ─── GET /api/lexicon/words ───────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   // ─── Insert word ──────────────────────────────────────────────────────────
 
-  const insertPayload: any = {
+  const insertPayload: WordLexiconInsert = {
     user_id:       userId,
     word:          word.toLowerCase().trim(),
     definition:    definition.trim(),
@@ -87,7 +88,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   const { data: newWord, error } = await supabase
     .from('word_lexicon')
-    .insert(insertPayload)
+    .insert(insertPayload as never)
     .select('id, word, definition, usage_example, cognitive_xp, usage_count, last_used_at, created_at')
     .single()
 

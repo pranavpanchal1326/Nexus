@@ -7,6 +7,7 @@ import {
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { groq, GROQ_MODEL, MAX_TOKENS } from '@/lib/groq'
 import { LEXICON_JUDGE_SYSTEM, getPersonaTemperature } from '@/lib/personas'
+import type { WordLexicon }           from '@/types/database'
 
 // ─── POST /api/lexicon/evaluate ───────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
     .ilike('word', word)
     .single()
 
-  const wordEntry = wordEntryRaw as any
+  const wordEntry = wordEntryRaw as WordLexicon | null
 
   if (wordError || !wordEntry) {
     return new Response(
@@ -101,7 +102,7 @@ export const POST = withAuth(async (req: Request, { userId }) => {
   }
 
   // ─── Update word stats ────────────────────────────────────────────────────
-  const updatePayload: any = {
+  const updatePayload = {
     usage_count:  wordEntry.usage_count + 1,
     cognitive_xp: wordEntry.cognitive_xp + judgement.xp_awarded,
     last_used_at: new Date().toISOString(),
@@ -114,17 +115,17 @@ export const POST = withAuth(async (req: Request, { userId }) => {
 
   // ─── Update profile XP and duel stats ────────────────────────────────────
 
-  supabase.rpc('increment_duel_stat', {
+  supabase.rpc('increment_duel_stat' as never, {
     p_user_id: userId,
     p_xp:      judgement.xp_awarded,
-  } as any).then(() => {/* silent */})
+  } as never).then(() => {/* silent */})
 
-  supabase.rpc('increment_cognitive_xp', {
+  supabase.rpc('increment_cognitive_xp' as never, {
     p_user_id: userId,
     p_xp:      judgement.xp_awarded,
-  } as any).then(() => {/* silent */})
+  } as never).then(() => {/* silent */})
 
-  supabase.rpc('recalculate_streak', { p_user_id: userId } as any)
+  supabase.rpc('recalculate_streak' as never, { p_user_id: userId } as never)
     .then(() => {/* silent */})
 
   // ─── Return evaluation ────────────────────────────────────────────────────

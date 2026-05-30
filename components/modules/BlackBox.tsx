@@ -121,7 +121,7 @@ export function BlackBox() {
 				className={`black-box__btn ${isExporting ? 'black-box__btn--loading' : ''}`}
 				onClick={handleExport}
 				disabled={isExporting}
-				whileTap={!isExporting ? ({ scale: 0.97 } as any) : undefined}
+				{...(!isExporting ? { whileTap: { scale: 0.97 } } : {})}
 				transition={SPRING.SNAP}
 			>
 				{isExporting ? (

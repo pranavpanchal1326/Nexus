@@ -6,6 +6,15 @@ import {
   generateDateRange,
   truncatePreview,
 } from '@/lib/statsHelpers'
+import type {
+  Profile,
+  DailyStat,
+  Journal,
+  GymLog,
+  WordLexicon,
+  ChatMessage,
+  ProfileInsert,
+} from '@/types/database'
 
 export const GET = withAuth(async (_req: Request, { userId }) => {
   const supabase = await createServerSupabaseClient()
@@ -59,20 +68,21 @@ export const GET = withAuth(async (_req: Request, { userId }) => {
       .limit(3),
   ])
 
-  let profile = profileResult.data as any
+  let profile: Pick<Profile, 'current_streak' | 'longest_streak' | 'cognitive_xp' | 'preferred_mode'> | null = profileResult.data
 
   if (profileResult.error) {
+    const upsertPayload: ProfileInsert = {
+      id: userId,
+      display_name: 'NEOPHYTE',
+      cognitive_xp: 0,
+      current_streak: 0,
+      longest_streak: 0,
+      preferred_mode: 'auto',
+      updated_at: new Date().toISOString(),
+    }
     const { data: newProfile, error: insertError } = await supabase
       .from('profiles')
-      .upsert({
-        id: userId,
-        display_name: 'NEOPHYTE',
-        cognitive_xp: 0,
-        current_streak: 0,
-        longest_streak: 0,
-        preferred_mode: 'auto',
-        updated_at: new Date().toISOString(),
-      } as any)
+      .upsert(upsertPayload as never)
       .select('current_streak, longest_streak, cognitive_xp, preferred_mode')
       .single()
 
@@ -100,7 +110,8 @@ export const GET = withAuth(async (_req: Request, { userId }) => {
     throw new Error('Stats query failed')
   }
 
-  const dailyStats = (dailyStatsResult.data as any[]) ?? []
+  const dailyStats: Pick<DailyStat, 'date' | 'journal_count' | 'gym_count' | 'duel_count' | 'oracle_count' | 'xp_earned'>[] =
+    dailyStatsResult.data ?? []
 
   const journalCount = dailyStats.reduce((s, d) => s + (d.journal_count ?? 0), 0)
   const gymCount = dailyStats.reduce((s, d) => s + (d.gym_count ?? 0), 0)
@@ -131,7 +142,8 @@ export const GET = withAuth(async (_req: Request, { userId }) => {
 
   const recentActivity: ActivityItem[] = []
 
-  ;(recentJournalResult.data as any[] ?? []).forEach(j => {
+  const journals: Pick<Journal, 'content' | 'mode' | 'created_at'>[] = recentJournalResult.data ?? []
+  journals.forEach(j => {
     recentActivity.push({
       type: 'journal',
       preview: truncatePreview(j.content ?? ''),
@@ -139,7 +151,8 @@ export const GET = withAuth(async (_req: Request, { userId }) => {
     })
   })
 
-  ;(recentGymResult.data as any[] ?? []).forEach(g => {
+  const gymLogs: Pick<GymLog, 'exercise' | 'sets' | 'reps' | 'weight' | 'unit' | 'created_at'>[] = recentGymResult.data ?? []
+  gymLogs.forEach(g => {
     const weightPart = g.weight !== null ? ` @ ${g.weight}${g.unit}` : ''
     recentActivity.push({
       type: 'gym',
@@ -148,7 +161,8 @@ export const GET = withAuth(async (_req: Request, { userId }) => {
     })
   })
 
-  ;(recentDuelResult.data as any[] ?? []).forEach(d => {
+  const duels: Pick<WordLexicon, 'word' | 'cognitive_xp' | 'last_used_at'>[] = recentDuelResult.data ?? []
+  duels.forEach(d => {
     if (!d.last_used_at) return
     recentActivity.push({
       type: 'duel',
@@ -157,7 +171,8 @@ export const GET = withAuth(async (_req: Request, { userId }) => {
     })
   })
 
-  ;(recentOracleResult.data as any[] ?? []).forEach(o => {
+  const oracleMessages: Pick<ChatMessage, 'content' | 'role' | 'mode' | 'created_at'>[] = recentOracleResult.data ?? []
+  oracleMessages.forEach(o => {
     recentActivity.push({
       type: 'oracle',
       preview: truncatePreview(o.content ?? ''),

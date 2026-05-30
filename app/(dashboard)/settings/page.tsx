@@ -8,6 +8,7 @@ import { PageWrapper, Button, Input, Divider } from '@/components/ui'
 import { getAudioState, setVolume, mute, unmute, setAmbientEnabled as setAmbientEnabledAudio } from '@/lib/audio'
 import { SPRING, CARD_REVEAL_VARIANTS, STAGGER_CONTAINER_VARIANTS } from '@/lib/motion'
 import type { PreferredMode } from '@/hooks/useTimeMode'
+import type { Profile, ProfileInsert } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,11 +50,11 @@ export default function SettingsPage() {
 
       setUserEmail(user.email ?? '')
 
-      const { data } = (await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('display_name, preferred_mode')
         .eq('id', user.id)
-        .single()) as unknown as { data: any }
+        .single() as { data: Pick<Profile, 'display_name' | 'preferred_mode'> | null, error: unknown }
 
       if (data) {
         setProfile({
@@ -83,15 +84,15 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      const upsertData: ProfileInsert = {
+        id: user.id,
+        display_name: profile.display_name.trim() || null,
+        preferred_mode: profile.preferred_mode,
+        updated_at: new Date().toISOString(),
+      }
       const { error } = await supabase
         .from('profiles')
-        // @ts-ignore - supabase client types infer never here
-        .upsert({
-          id: user.id,
-          display_name: profile.display_name.trim() || null,
-          preferred_mode: profile.preferred_mode,
-          updated_at: new Date().toISOString(),
-        } as any)
+        .upsert(upsertData as never)
 
       if (error) throw error
 

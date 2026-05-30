@@ -10,6 +10,12 @@ interface AddWordModalProps {
   onClose: () => void
 }
 
+interface WordPayload {
+  word:           string
+  definition:     string
+  usage_example?: string
+}
+
 export function AddWordModal({ isOpen, onClose }: AddWordModalProps) {
   const [word,     setWord]     = useState('')
   const [def,      setDef]      = useState('')
@@ -25,7 +31,7 @@ export function AddWordModal({ isOpen, onClose }: AddWordModalProps) {
     setFormError(null)
 
     try {
-      const payload: any = {
+      const payload: WordPayload = {
         word:           word.trim(),
         definition:     def.trim(),
       }

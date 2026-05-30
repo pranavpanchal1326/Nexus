@@ -6,14 +6,14 @@ import { journalKeys } from './useJournal'
 import { gymKeys } from './useGym'
 import { lexiconKeys } from './useLexicon'
 
-export function useInvalidateStats() {
+export function useInvalidateStats(): () => void {
   const queryClient = useQueryClient()
   return useCallback(() => {
     queryClient.invalidateQueries({ queryKey: statsKeys.all })
   }, [queryClient])
 }
 
-export function useInvalidateAll() {
+export function useInvalidateAll(): () => void {
   const queryClient = useQueryClient()
   return useCallback(() => {
     queryClient.invalidateQueries({ queryKey: journalKeys.all })
@@ -23,7 +23,7 @@ export function useInvalidateAll() {
   }, [queryClient])
 }
 
-export function usePrefetchStats() {
+export function usePrefetchStats(): () => Promise<void> {
   const queryClient = useQueryClient()
   return useCallback(async () => {
     await queryClient.prefetchQuery({

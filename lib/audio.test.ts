@@ -37,7 +37,7 @@ const mockContext = {
     Q: { value: 1 },
     connect: vi.fn(),
   })),
-  createBuffer:       vi.fn((_ch, size, _sr) => ({
+  createBuffer:       vi.fn((_ch, size) => ({
     getChannelData: vi.fn(() => new Float32Array(size)),
   })),
   createBufferSource: vi.fn(() => ({

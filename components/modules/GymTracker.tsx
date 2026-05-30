@@ -17,6 +17,26 @@ import { SPRING }                   from '@/lib/motion'
 
 type WeightUnit = 'kg' | 'lbs'
 
+interface GymSetPayload {
+  exercise: string
+  sets:     number
+  reps:     number
+  unit:     WeightUnit
+  weight?:  number
+  notes?:   string
+}
+
+interface GymContextPayload {
+  exercise:       string
+  sets:           number
+  reps:           number
+  unit:           WeightUnit
+  currentVolume:  number
+  mode:           'apex' | 'haven'
+  weight?:        number
+  previousVolume?: number
+}
+
 interface SessionSet {
   id:          string
   exercise:    string
@@ -74,7 +94,7 @@ export function GymTracker() {
     const weightNum = weight ? parseFloat(weight) : undefined
 
     try {
-      const payload: any = {
+      const payload: GymSetPayload = {
         exercise: exerciseTrimmed,
         sets:     setsNum,
         reps:     repsNum,
@@ -103,13 +123,13 @@ export function GymTracker() {
       if (result.ai_insight) {
         setLastInsight(result.ai_insight)
       } else {
-        const ctxPayload: any = {
+        const ctxPayload: GymContextPayload = {
           exercise:        exerciseTrimmed,
           sets:            setsNum,
           reps:            repsNum,
           unit,
           currentVolume:   result.current_volume,
-          mode,
+          mode:            mode as 'apex' | 'haven',
         }
         if (weightNum !== undefined) ctxPayload.weight = weightNum
         if (result.previous_volume !== null) ctxPayload.previousVolume = result.previous_volume
