@@ -1,5 +1,5 @@
 # NEXUS v2.0 — Void Intelligence OS
-
+ Still under development !!
 > **An intelligence operating system engineered for 2026.**
 > Not a productivity app. A system that knows you, tracks your cognitive and physical output, and surfaces insight without being asked.
 
